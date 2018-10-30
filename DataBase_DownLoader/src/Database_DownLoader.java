@@ -19,7 +19,7 @@ public class Database_DownLoader {
 					DatabaseProcessor processor = new DatabaseProcessor(inProcessor);
 					processor.process();
 					processor.loadDatabase();
-					break;
+					break; 
 				}
 				case BOTH:{
 					DatabaseProcessor processor = new DatabaseProcessor(inProcessor);
