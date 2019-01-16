@@ -19,6 +19,7 @@ public class DatabaseProcessor {
 	private ArrayList<String> references;
 	private boolean cleanDatabase;
 	private ArrayList<String> dustCommand;
+	private boolean keywordFiltering = true;
 	public  ArrayList<String> getReferences() {
 		return references;
 	}
@@ -106,8 +107,8 @@ public class DatabaseProcessor {
 		}
 		String rep ="";
 		switch(reference){
-			case ALL:
-				rep = "all";
+			case DISABLE:
+				rep = "disable";
 				break;
 			case REFERENCE_GENOME:
 				rep = "reference genome";
@@ -118,13 +119,16 @@ public class DatabaseProcessor {
 			case NA:
 				rep="na";
 				break;
+			case STRICT:
+				rep="strict";
+				break;	
 		}
 		if(taxNames!=null && taxNames.size()>0) {
 			output += "list/";
 			new File(output).mkdir();
-			getter = new IndexGetter(fileName, taxNames, keyword, output, rep);
+			getter = new IndexGetter(fileName, taxNames, keyword, output, rep,keywordFiltering );
 		}else {
-			getter = new IndexGetter(fileName, keyword, output, rep);
+			getter = new IndexGetter(fileName, keyword, output, rep,keywordFiltering );
 		}
 		getter.process();
 	}

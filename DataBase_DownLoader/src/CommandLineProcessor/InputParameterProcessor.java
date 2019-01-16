@@ -36,7 +36,7 @@ public class InputParameterProcessor {
 	 */
 	// initialize class with standard values;	
 	private String outDir;
-	private ReferenceGenome reference = ReferenceGenome.ALL;
+	private ReferenceGenome reference = ReferenceGenome.DISABLE;
 	private ExecutionMode mode;
 	private Phylum phylum;
 	private State sequenceState;
@@ -239,13 +239,15 @@ public class InputParameterProcessor {
 
     	        if (commandLine.hasOption("wgs")) {
     	        	if(Pattern.compile(Pattern.quote("all"), Pattern.CASE_INSENSITIVE).matcher(commandLine.getOptionValue("wgs")).find()){
-    	        		reference =ReferenceGenome.ALL;
+    	        		reference =ReferenceGenome.DISABLE;
    	        	 	}else if(Pattern.compile(Pattern.quote("reference_genome"), Pattern.CASE_INSENSITIVE).matcher(commandLine.getOptionValue("wgs")).find()) {
    	        	 		reference = ReferenceGenome.REFERENCE_GENOME;
    	        	 	}else if(Pattern.compile(Pattern.quote("representative_genome"), Pattern.CASE_INSENSITIVE).matcher(commandLine.getOptionValue("wgs")).find()) {
    	        	 		reference = ReferenceGenome.REPRESENTATIVE_GENOME;
    	        	 	}else if(Pattern.compile(Pattern.quote("na"), Pattern.CASE_INSENSITIVE).matcher(commandLine.getOptionValue("wgs")).find()) {
    	        	 		reference = ReferenceGenome.NA;
+   	        	 	}else if(Pattern.compile(Pattern.quote("strict"), Pattern.CASE_INSENSITIVE).matcher(commandLine.getOptionValue("wgs")).find()) {
+   	        	 		reference = ReferenceGenome.STRICT;
    	        	 	}
     	        }
     	        if (commandLine.hasOption("output"))//set output directorty
