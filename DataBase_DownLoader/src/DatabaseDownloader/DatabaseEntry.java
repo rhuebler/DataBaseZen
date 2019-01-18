@@ -1,5 +1,7 @@
 package DatabaseDownloader;
 
+import java.time.ZonedDateTime;
+
 import Utility.State;
 
 public class DatabaseEntry {
@@ -10,48 +12,33 @@ public class DatabaseEntry {
 	private int speciesTaxID;
 	private State assembly_level;
 	private String realm;
-	
-//	Column 12: "assembly_level"
-//		   Assembly level: the highest level of assembly for any object in the genome 
-//		   assembly.
-//		   Values:
-//		      Complete genome - all chromosomes are gapless and have no runs of 10 or 
-//		                        more ambiguous bases (Ns), there are no unplaced or 
-//		                        unlocalized scaffolds, and all the expected chromosomes
-//		                        are present (i.e. the assembly is not noted as having 
-//		                        partial genome representation). Plasmids and organelles
-//		                        may or may not be included in the assembly but if 
-//		                        present then the sequences are gapless.
-//		      Chromosome      - there is sequence for one or more chromosomes. This 
-//		                        could be a completely sequenced chromosome without gaps
-//		                        or a chromosome containing scaffolds or contigs with 
-//		                        gaps between them. There may also be unplaced or 
-//		                        unlocalized scaffolds.
-//		      Scaffold        - some sequence contigs have been connected across gaps to
-//		                        create scaffolds, but the scaffolds are all unplaced or 
-//		                        unlocalized.
-//		      Contig          - nothing is assembled beyond the level of sequence 
-//		                        contigs
-	public DatabaseEntry(String name, String link, String outDir, String assemblyLevel, int taxID, int speciesTaxID){
+	private String seq_rel_date;
+	private String asm_name;
+
+
+
+	public DatabaseEntry(String name, String link, String outDir, String assemblyLevel, int taxID, int speciesTaxID, String seq_rel_date, String asm_name){
 		this.link = link;
 		this.name = name.toString().replace("=", "_").replace("/", "_");
 		this.outDir = outDir;
 		switch (assemblyLevel) {
 			case "Complete genome":
-				assembly_level = State.COMPLETE;
+				setAssembly_level(State.COMPLETE);
 				break;
 			case "Chromosome":
-				assembly_level = State.CHROMOSOME;
+				setAssembly_level(State.CHROMOSOME);
 				break;
 			case "Scaffold":
-				assembly_level = State.SCAFFOLD;
+				setAssembly_level(State.SCAFFOLD);
 				break;
 			case "Contig":
-				assembly_level = State.CONTIG;
+				setAssembly_level(State.CONTIG);
 				break;
 		}
-		this.taxID = taxID;
-		this.speciesTaxID = speciesTaxID;
+		this.setTaxID(taxID);
+		this.setSpeciesTaxID(speciesTaxID);
+		this.setSeq_rel_date(seq_rel_date);
+		this.setAsm_name(asm_name);
 	}
 	public String getOutFile() {
 		if(!outDir.endsWith("/")){
@@ -67,5 +54,47 @@ public class DatabaseEntry {
 	}
 	public String getLink() {
 		return link;
+	}
+	public String getAsm_name() {
+		return asm_name;
+	}
+	public void setAsm_name(String asm_name) {
+		this.asm_name = asm_name;
+	}
+	public String getSeq_rel_date() {
+		return seq_rel_date;
+	}
+	public void setSeq_rel_date(String seq_rel_date) {
+		this.seq_rel_date = seq_rel_date;
+	}
+	public String getRealm() {
+		return realm;
+	}
+	public void setRealm(String realm) {
+		this.realm = realm;
+	}
+	public State getAssembly_level() {
+		return assembly_level;
+	}
+	public void setAssembly_level(State assembly_level) {
+		this.assembly_level = assembly_level;
+	}
+	public int getSpeciesTaxID() {
+		return speciesTaxID;
+	}
+	public void setSpeciesTaxID(int speciesTaxID) {
+		this.speciesTaxID = speciesTaxID;
+	}
+	public int getTaxID() {
+		return taxID;
+	}
+	public void setTaxID(int taxID) {
+		this.taxID = taxID;
+	}
+	public String getLine() {
+		
+	
+		return name +"\t"+taxID+"\t"+speciesTaxID+"\t"+assembly_level+"\t"+seq_rel_date+"\t"+asm_name+"\t"+ZonedDateTime.now();
+	
 	}
 }

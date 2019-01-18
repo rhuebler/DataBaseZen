@@ -140,7 +140,7 @@ public class DatabaseProcessor {
 		EntryLoader loader = new EntryLoader() ;
 		for(DatabaseEntry entry : getEntries()) {
 			try{
-				loader.download(entry.getOutFile(),entry.getLink());
+				loader.download(entry);
 			}catch(Exception e) {
 				e.printStackTrace();
 			}
