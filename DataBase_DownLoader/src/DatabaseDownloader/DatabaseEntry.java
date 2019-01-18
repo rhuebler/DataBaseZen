@@ -91,10 +91,8 @@ public class DatabaseEntry {
 	public void setTaxID(int taxID) {
 		this.taxID = taxID;
 	}
-	public String getLine() {
-		
-	
-		return name +"\t"+taxID+"\t"+speciesTaxID+"\t"+assembly_level+"\t"+seq_rel_date+"\t"+asm_name+"\t"+ZonedDateTime.now();
+	public String getIndexLine() {
+			return name +"\t"+taxID+"\t"+speciesTaxID+"\t"+assembly_level+"\t"+seq_rel_date+"\t"+asm_name+"\t"+ZonedDateTime.now();
 	
 	}
 }
