@@ -14,7 +14,8 @@ public class DatabaseEntry {
 	private String realm;
 	private String seq_rel_date;
 	private String asm_name;
-
+	private int totalContigs = 0;
+	private int keptContigs = 0;
 
 
 	public DatabaseEntry(String name, String link, String outDir, String assemblyLevel, int taxID, int speciesTaxID, String seq_rel_date, String asm_name){
@@ -94,5 +95,17 @@ public class DatabaseEntry {
 	public String getIndexLine() {
 			return name +"\t"+taxID+"\t"+speciesTaxID+"\t"+assembly_level+"\t"+seq_rel_date+"\t"+asm_name+"\t"+ZonedDateTime.now();
 	
+	}
+	public int getTotalContigs() {
+		return totalContigs;
+	}
+	public void setTotalContigs(int totalContigs) {
+		this.totalContigs = totalContigs;
+	}
+	public int getKeptContigs() {
+		return keptContigs;
+	}
+	public void setKeptContigs(int keptContigs) {
+		this.keptContigs = keptContigs;
 	}
 }
