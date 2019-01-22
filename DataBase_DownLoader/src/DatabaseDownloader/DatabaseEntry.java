@@ -93,8 +93,7 @@ public class DatabaseEntry {
 		this.taxID = taxID;
 	}
 	public String getIndexLine() {
-			return name +"\t"+taxID+"\t"+speciesTaxID+"\t"+assembly_level+"\t"+seq_rel_date+"\t"+asm_name+"\t"+ZonedDateTime.now();
-	
+			return name +"\t"+taxID+"\t"+speciesTaxID+"\t"+assembly_level+"\t"+seq_rel_date+"\t"+asm_name+"\t"+ZonedDateTime.now()+"\t"+totalContigs+"\t"+keptContigs+"\t"+(totalContigs-keptContigs);
 	}
 	public int getTotalContigs() {
 		return totalContigs;

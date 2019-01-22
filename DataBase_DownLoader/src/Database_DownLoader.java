@@ -25,8 +25,8 @@ public class Database_DownLoader {
 					DatabaseProcessor processor = new DatabaseProcessor(inProcessor);
 					processor.process();
 					processor.loadDatabase();
-					ArtificalDataControler controler = new ArtificalDataControler(inProcessor, processor.getReferences());
-					controler.process();
+//					ArtificalDataControler controler = new ArtificalDataControler(inProcessor, processor.getReferences());
+//					controler.process();
 					break;
 					}
 				case DOWNLOAD:{

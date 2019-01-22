@@ -22,7 +22,7 @@ import java.util.zip.GZIPOutputStream;
 public class EntryLoader {
 	
 	
-	private ArrayList<String> references = new ArrayList<String>();
+	private ArrayList<DatabaseEntry> references = new ArrayList<DatabaseEntry>();
 	private boolean replaceExisting = true;
 	private boolean contigLengthFiltering = true;
 	private int lengthThreshold = 1000000;
@@ -44,7 +44,6 @@ public class EntryLoader {
 				   int totalNumber = 0;
 				   int numberKept = 0;
 				   ArrayList<String> contig = new  ArrayList<String>();
-				 
 				   while((line = buffered.readLine())!=null) {
 					   if(line.startsWith(">")) {
 						   totalNumber++;
@@ -66,6 +65,7 @@ public class EntryLoader {
 				   gzipStream.close();
 				   entry.setTotalContigs(totalNumber);
 				   entry.setKeptContigs(numberKept);
+				   references.add(entry);
 			   }catch(Exception e) {
 			    	System.err.println("FileName "+fileName+"\n"+"URL: "+url);
 			    	e.printStackTrace();
@@ -95,7 +95,7 @@ public class EntryLoader {
 				try (InputStream in = URI.create(url).toURL().openStream()) {
 					CopyOption[] options = new CopyOption[] {StandardCopyOption.REPLACE_EXISTING};
 					Files.copy(in, Paths.get(fileName), options);
-					references.add(fileName);
+					references.add(entry);
 		    	}catch(Exception e) {
 		    		System.err.println("FileName "+fileName+"\n"+"URL: "+url);
 		    		e.printStackTrace();
@@ -125,7 +125,7 @@ public class EntryLoader {
 		}
 		
 	}
-	public ArrayList<String> getDownLoadedReferences(){
+	public ArrayList<DatabaseEntry> getDownLoadedReferences(){
 		return references;
 	}
 }

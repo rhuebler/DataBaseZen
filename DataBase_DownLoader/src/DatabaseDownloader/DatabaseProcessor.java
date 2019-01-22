@@ -1,7 +1,13 @@
 package DatabaseDownloader;
 
 import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.io.Writer;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
+import java.util.zip.GZIPOutputStream;
 
 import CommandLineProcessor.InputParameterProcessor;
 import Utility.Phylum;
@@ -16,11 +22,11 @@ public class DatabaseProcessor {
 	private ArrayList<String> taxNames;
 	private ReferenceGenome reference;
 	private String output="";
-	private ArrayList<String> references;
+	private ArrayList<DatabaseEntry> references;
 	private boolean cleanDatabase;
 	private ArrayList<String> dustCommand;
 	private boolean keywordFiltering = true;
-	public  ArrayList<String> getReferences() {
+	public  ArrayList<DatabaseEntry> getReferences() {
 		return references;
 	}
 	public DatabaseProcessor(InputParameterProcessor inProcessor) {
@@ -151,18 +157,33 @@ public class DatabaseProcessor {
 		references = loader.getDownLoadedReferences();
 	}
 	private void cleanDatabase() {
-		references.clear();
-		ArrayList<String>command=new ArrayList<String>();
+		ArrayList<String>command = new ArrayList<String>();
 		command.add("rm");
 		command.add("placeholder");
 		ProcessExecutor executor = new ProcessExecutor();
-		for(DatabaseEntry entry : getEntries()) {
+		for(DatabaseEntry entry : references) {
 			dustCommand.set(2, entry.getOutFile()); //change input to inputfile is index 2
 			dustCommand.set(4, entry.getFilteredFile()); //change output to outputfile is index 4
 			executor.run(dustCommand);
 			command.set(1, entry.getFilteredFile());
 			executor.run(command);
-			references.add(entry.getFilteredFile());
 		}
 	}	
+	
+	private void writeIndex() {
+		String header = "Name\ttaxID\tspeciesTaxID\tassembly_level\tseq_rel_date\tasm_name\t"+ZonedDateTime.now()+"\tNumberTotalContigs\tNumberKeptContigs\tNumberRemovedContigs";
+		if(references!=null) {
+			 try (   FileOutputStream outputStream = new FileOutputStream(output+"index.txt");
+		                Writer writer = new OutputStreamWriter(new GZIPOutputStream(outputStream), "UTF-8")) {
+				 writer.write(header);
+				 for(DatabaseEntry entry : references) {
+		            writer.write(entry.getIndexLine());
+				 }
+
+		        }catch(IOException io) {
+					io.printStackTrace();
+				}
+			
+		}
+	}
 }
