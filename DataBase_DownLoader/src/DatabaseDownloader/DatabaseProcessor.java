@@ -1,12 +1,16 @@
 package DatabaseDownloader;
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.zip.GZIPOutputStream;
 
 import CommandLineProcessor.InputParameterProcessor;
@@ -65,6 +69,7 @@ public class DatabaseProcessor {
 			command.add("-outfmt");command.add("fasta");
 			command.add("-linker"); command.add(""+inProcessor.getDustLinker());
 		}
+		writeDatabaseIndex();
 	}
 	
 	public void process() {
@@ -144,6 +149,7 @@ public class DatabaseProcessor {
 	public void loadDatabase() {
 		new File(output).mkdir();
 		EntryLoader loader = new EntryLoader() ;
+		loader.setCleanDB(cleanDatabase);
 		for(DatabaseEntry entry : getEntries()) {
 			try{
 				loader.download(entry);
@@ -170,20 +176,67 @@ public class DatabaseProcessor {
 		}
 	}	
 	
-	private void writeIndex() {
-		String header = "Name\ttaxID\tspeciesTaxID\tassembly_level\tseq_rel_date\tasm_name\t"+ZonedDateTime.now()+"\tNumberTotalContigs\tNumberKeptContigs\tNumberRemovedContigs";
+	private void writeDatabaseIndex() {
+		String header = "Name\ttaxID\tspeciesTaxID\tassembly_level\tseq_rel_date\tasm_name\tFileName\tTime\tNumberTotalContigs\tNumberKeptContigs\tNumberRemovedContigs";
 		if(references!=null) {
 			 try (   FileOutputStream outputStream = new FileOutputStream(output+"index.txt");
 		                Writer writer = new OutputStreamWriter(new GZIPOutputStream(outputStream), "UTF-8")) {
 				 writer.write(header);
 				 for(DatabaseEntry entry : references) {
-		            writer.write(entry.getIndexLine());
+						 writer.write(entry.getIndexLine());
 				 }
 
 		        }catch(IOException io) {
 					io.printStackTrace();
 				}
-			
+			}
+		}
+	private ArrayList<DatabaseEntry> loadDatabaseIndex(String pathToIndex){
+		ArrayList<DatabaseEntry> indexEntries= new ArrayList<DatabaseEntry>();
+		File indexFile = new File(pathToIndex) ;
+		BufferedReader br;
+		try {
+			br = new BufferedReader(new FileReader(indexFile));
+			String line; 
+			int number = 0;
+			while ((line = br.readLine()) != null) {
+			    if(number!=0) {
+			    String[]parts =	line.split("\t");
+			    //(String name, String link, String outDir, String assemblyLevel, int taxID, int speciesTaxID, String seq_rel_date, String asm_name)
+			    	DatabaseEntry entry = new DatabaseEntry(parts[0],null,null,parts[3],Integer.parseInt(parts[1]),Integer.parseInt(parts[2]),parts[4],parts[5]);
+			    	entry.setTotalContigs(Integer.parseInt(parts[8]));
+			    	entry.setKeptContigs(Integer.parseInt(parts[9]));
+			    	entry.setFileName(parts[6]);
+			    	indexEntries.add(entry);
+			    }
+			    number++;
+			} 	
+			br.close();
+		} catch (FileNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch(IOException io) {
+			io.printStackTrace();
+		}
+		
+		return indexEntries;
+	}
+	private void updateDatabase(String pathToIndex) {
+		ArrayList<DatabaseEntry> entriesToUpdate = new ArrayList<DatabaseEntry>();
+		HashMap<Integer, DatabaseEntry> map = new HashMap<Integer, DatabaseEntry>();
+		for (DatabaseEntry entry : loadDatabaseIndex(pathToIndex)) {
+			map.put(entry.getCode(), entry);
+		}
+		for(DatabaseEntry entry :references) {
+			if(!map.containsKey(entry.getCode())) {
+				entriesToUpdate.add(entry);
+			}
+			else {
+				map.remove(entry.getCode());
+			}
+			if(!map.isEmpty()) {//do something clever
+				
+			}
 		}
 	}
 }

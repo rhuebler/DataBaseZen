@@ -16,8 +16,8 @@ public class DatabaseEntry {
 	private String asm_name;
 	private int totalContigs = 0;
 	private int keptContigs = 0;
-
-
+	private String fileName ="";
+	private boolean cleanDB = false;
 	public DatabaseEntry(String name, String link, String outDir, String assemblyLevel, int taxID, int speciesTaxID, String seq_rel_date, String asm_name){
 		this.link = link;
 		this.name = name.toString().replace("=", "_").replace("/", "_");
@@ -41,17 +41,30 @@ public class DatabaseEntry {
 		this.setSeq_rel_date(seq_rel_date);
 		this.setAsm_name(asm_name);
 	}
-	public String getOutFile() {
-		if(!outDir.endsWith("/")){
-			outDir+="/";
-		}
-		return outDir+name+".fna.gz";
+	public void setCleanDB(boolean b) {
+		cleanDB =b;
 	}
+	public void setFileName(String s) {
+		fileName=s;
+	}
+	public String getOutFile() {
+		if(outDir!= null) {
+			if(!outDir.endsWith("/")){
+			outDir+="/";
+			}
+			return outDir+name+".fna.gz";
+		}else 
+			return fileName;
+	}
+	
 	public String getFilteredFile() {
 		return outDir+name+"_dusted.fna.gz";
 	}
 	public String getName() {
 		return name;
+	}
+	public int getCode() {
+		return getIndexLine().hashCode();
 	}
 	public String getLink() {
 		return link;
@@ -93,8 +106,14 @@ public class DatabaseEntry {
 		this.taxID = taxID;
 	}
 	public String getIndexLine() {
-			return name +"\t"+taxID+"\t"+speciesTaxID+"\t"+assembly_level+"\t"+seq_rel_date+"\t"+asm_name+"\t"+ZonedDateTime.now()+"\t"+totalContigs+"\t"+keptContigs+"\t"+(totalContigs-keptContigs);
+		if(cleanDB)
+			return getCleanedIndexLine();
+		else
+			return name +"\t"+taxID+"\t"+speciesTaxID+"\t"+assembly_level+"\t"+seq_rel_date+"\t"+asm_name+"\t"+getOutFile()+"\t"+ZonedDateTime.now()+"\t"+totalContigs+"\t"+keptContigs+"\t"+(totalContigs-keptContigs);
 	}
+	private String getCleanedIndexLine() {
+		return name +"\t"+taxID+"\t"+speciesTaxID+"\t"+assembly_level+"\t"+seq_rel_date+"\t"+asm_name+"\t"+getFilteredFile()+"\t"+ZonedDateTime.now()+"\t"+totalContigs+"\t"+keptContigs+"\t"+(totalContigs-keptContigs);
+}
 	public int getTotalContigs() {
 		return totalContigs;
 	}

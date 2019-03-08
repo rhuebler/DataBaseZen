@@ -20,12 +20,14 @@ import java.util.ArrayList;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 public class EntryLoader {
-	
-	
 	private ArrayList<DatabaseEntry> references = new ArrayList<DatabaseEntry>();
 	private boolean replaceExisting = true;
 	private boolean contigLengthFiltering = true;
 	private int lengthThreshold = 1000000;
+	private boolean cleanDB = false;
+	public void setCleanDB(boolean b) {
+		cleanDB =b;
+	}
 	private void downLoadAssembly(DatabaseEntry entry) {
 		String url = entry.getLink();
 		String fileName = entry.getOutFile();
@@ -95,6 +97,7 @@ public class EntryLoader {
 				try (InputStream in = URI.create(url).toURL().openStream()) {
 					CopyOption[] options = new CopyOption[] {StandardCopyOption.REPLACE_EXISTING};
 					Files.copy(in, Paths.get(fileName), options);
+					entry.setCleanDB(cleanDB);
 					references.add(entry);
 		    	}catch(Exception e) {
 		    		System.err.println("FileName "+fileName+"\n"+"URL: "+url);
