@@ -30,6 +30,7 @@ public class DatabaseProcessor {
 	private boolean cleanDatabase;
 	private ArrayList<String> dustCommand;
 	private boolean keywordFiltering = true;
+	private String pathToIndex="";
 	public  ArrayList<DatabaseEntry> getReferences() {
 		return references;
 	}
@@ -69,7 +70,7 @@ public class DatabaseProcessor {
 			command.add("-outfmt");command.add("fasta");
 			command.add("-linker"); command.add(""+inProcessor.getDustLinker());
 		}
-		writeDatabaseIndex();
+		pathToIndex = inProcessor.getPathToIndex();
 	}
 	
 	public void process() {
@@ -161,6 +162,7 @@ public class DatabaseProcessor {
 			cleanDatabase(); 
 		}
 		references = loader.getDownLoadedReferences();
+		writeDatabaseIndex();
 	}
 	private void cleanDatabase() {
 		ArrayList<String>command = new ArrayList<String>();
@@ -221,7 +223,7 @@ public class DatabaseProcessor {
 		
 		return indexEntries;
 	}
-	private void updateDatabase(String pathToIndex) {
+	public void updateDatabase() {
 		ArrayList<DatabaseEntry> entriesToUpdate = new ArrayList<DatabaseEntry>();
 		HashMap<Integer, DatabaseEntry> map = new HashMap<Integer, DatabaseEntry>();
 		for (DatabaseEntry entry : loadDatabaseIndex(pathToIndex)) {

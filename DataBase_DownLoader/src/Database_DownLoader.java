@@ -40,6 +40,11 @@ public class Database_DownLoader {
 					controler.process();
 					//System.err.println("Currently not implemented!");
 					break;
+				case UPDATE:
+					DatabaseProcessor processor = new DatabaseProcessor(inProcessor);
+					processor.process();
+					processor.updateDatabase();
+					break;	
 			}
 		} catch (IOException e) {
 			// TODO Auto-generated catch block

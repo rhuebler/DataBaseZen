@@ -1,5 +1,5 @@
 package Utility;
 
 public enum ExecutionMode {
-	DOWNLOAD, CREATE, BOTH
+	DOWNLOAD, CREATE, BOTH, UPDATE
 }

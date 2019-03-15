@@ -52,7 +52,7 @@ public class InputParameterProcessor {
 	private SimulateFormat format = SimulateFormat.FASTA;
 	private  int threads = 1;
 	private boolean cleanDB =false;
-	
+	private String pathToIndex = "";
 	
 	private String dustFormat = "fasta";
 	private int dustLevel = 20;
@@ -73,8 +73,10 @@ public class InputParameterProcessor {
 		return dustLinker;
 	}
 	public InputParameterProcessor(String[] params) throws IOException, ParseException{
-		
-		process(params);	
+		process(params);
+	}
+	public String getPathToIndex() {
+		return pathToIndex;
 	}
 	public boolean iscleanDB() {
 		return cleanDB;
@@ -167,6 +169,7 @@ public class InputParameterProcessor {
 		input+="\n--dustLevel	"+dustLevel;
 		input+="\n--dustWindow	"+dustWindow;
 		input+="\n--dustLinker	"+dustLinker;
+		input+="\n--index	"+pathToIndex;
 		return input;
 	}
 	private void process(String[] parameters) throws IOException, ParseException{	
@@ -175,7 +178,7 @@ public class InputParameterProcessor {
     	 	// here we describe all CLI options
     	    Option option_Database = Option.builder("r").longOpt("references").argName("String").hasArgs().desc("Specify where to locate directory with references downloaded outside from this program").build();
     	    Option option_Output = Option.builder("o").longOpt("output").argName("String").hasArg().desc("Specify out directory").build();
-    	    Option optionMode = Option.builder("m").longOpt("mode").argName("String").hasArg().desc("full, download, create").build();
+    	    Option optionMode = Option.builder("m").longOpt("mode").argName("String").hasArg().desc("full, download, create, update").build();
     	    Option optionPhylum = Option.builder("p").longOpt("phylum").argName("String").hasArg().desc("fullNT, bacteria, viral, eukaryotes").build();
     	    Option optionState = Option.builder("s").longOpt("state").argName("String").hasArg().desc("complete, plasmid, assembly, all").build();
     	    Option optionTaxonList = Option.builder("t").longOpt("taxonlist").argName("String").hasArg().desc("A List with all taxa for which an analysis is desired.\n Taxa List will also be added to download").build();
@@ -192,7 +195,8 @@ public class InputParameterProcessor {
     	    Option optionDustLevel = Option.builder("").longOpt("dustLevel").hasArg().optionalArg(true).desc("Set Level parameter for DustMasker").build();
     	    Option optionDustWindow = Option.builder("").longOpt("dustWindow").optionalArg(true).desc("Set window size for DustMasker").build();
     	    Option optionDustLinker = Option.builder("").longOpt("dustLinker").hasArg().optionalArg(true).desc("Set Linker Parameter for DustMasker").build();
-
+    	    Option optionPathToIndex = Option.builder("").longOpt("index").hasArg().optionalArg(true).desc("Set the path to index to update an index").build();
+    	    
     	    Options options = new Options();
     	    
     	    // add all parameters to the parser
@@ -216,7 +220,7 @@ public class InputParameterProcessor {
     	    options.addOption(optionDustLinker);
     	    options.addOption(optionDustWindow);
     	    options.addOption(optionDustLevel);
-
+    	    options.addOption(optionPathToIndex);
     	    //parse arguments into the comandline parser
     	        commandLine = parser.parse(options, parameters);
  
@@ -228,6 +232,8 @@ public class InputParameterProcessor {
     	        		 mode = ExecutionMode.DOWNLOAD;
     	        	 }else if(Pattern.compile(Pattern.quote("create"), Pattern.CASE_INSENSITIVE).matcher(commandLine.getOptionValue("mode")).find()) {
     	        		 mode = ExecutionMode.CREATE;
+    	        	 }else if(Pattern.compile(Pattern.quote("update"), Pattern.CASE_INSENSITIVE).matcher(commandLine.getOptionValue("mode")).find()) {
+    	        		 mode = ExecutionMode.UPDATE;
     	        	 }else {
     	        		 System.err.println("Unknown Mode Shutting down");	
     	        		 System.exit(1);
@@ -393,8 +399,6 @@ public class InputParameterProcessor {
 							System.exit(1);
 	        			   }
 	        		   }   
-	        		
-
 	        		break;
 	        		}
     	        	case CREATE:{
@@ -421,6 +425,59 @@ public class InputParameterProcessor {
 	    	        		}
 	    	        	    
 	    	        	break;
+    	        	}
+    	        	case UPDATE:{
+	    	        		if (commandLine.hasOption("phylum")) {
+		        				if(Pattern.compile(Pattern.quote("bacteria"), Pattern.CASE_INSENSITIVE).matcher(commandLine.getOptionValue("phylum")).find()){
+		        					phylum = Phylum.BACTERIA;
+		      	        	 		}else if(Pattern.compile(Pattern.quote("eukaryotes"), Pattern.CASE_INSENSITIVE).matcher(commandLine.getOptionValue("phylum")).find()) {
+	 	      	        		   phylum = Phylum.EUKARYOTES;
+	 	      	        	 	}else if(Pattern.compile(Pattern.quote("fullnt"), Pattern.CASE_INSENSITIVE).matcher(commandLine.getOptionValue("phylum")).find()) {
+	 	      	        	 		phylum = Phylum.FULLNT;
+	 	      	        	 	}else if(Pattern.compile(Pattern.quote("viral"), Pattern.CASE_INSENSITIVE).matcher(commandLine.getOptionValue("phylum")).find()) {
+	 	      	        	 		phylum = Phylum.VIRAL;
+	 	      	        	 	}else {
+	 	      	        	 		System.err.println("unspecified input for phylum");
+	 	      	        	 	}
+		        			}
+	        			   if(commandLine.hasOption("state")) {
+		        			   String state = commandLine.getOptionValue("state");
+		        			   if(Pattern.compile(Pattern.quote("complete"), Pattern.CASE_INSENSITIVE).matcher(state).find()){
+		        				   sequenceState = State.COMPLETE;
+		        			   }else if(Pattern.compile(Pattern.quote("scaffold"), Pattern.CASE_INSENSITIVE).matcher(state).find()){
+		        				   sequenceState = State.SCAFFOLD;
+		        			   }else if(Pattern.compile(Pattern.quote("contig"), Pattern.CASE_INSENSITIVE).matcher(state).find()){
+		        				   sequenceState =  State.CONTIG;
+		        			   }else if(Pattern.compile(Pattern.quote("all"), Pattern.CASE_INSENSITIVE).matcher(state).find()){
+		        				   sequenceState = State.ALL;
+		        			   }else {
+		        				   
+		        			   }
+	        			   }
+	        		   if (commandLine.hasOption("taxonlist")) {
+	        			   try{
+	        			
+	        				   String tax = commandLine.getOptionValue("taxonlist");
+	        				   File f = new File(tax);
+	        				   if(f.getCanonicalFile().exists()){
+	    	     					readTaxList(f);
+	        				   }else {
+	        					System.err.println("IOException taxa list cannot be resolved");
+	   							System.exit(1);
+	        				   }
+	        			   }catch (IOException e) {
+							System.err.println("IOException taxa list cannot be resolved");
+							e.printStackTrace();
+							System.exit(1);
+	        			   }
+	        		   	}   
+	        		   if (commandLine.hasOption("index")) {
+	        			    pathToIndex = commandLine.getOptionValue("index");
+	        				} else {
+	        					System.err.println("No database index provided!!! Cannot update Index!!!");
+	        					System.exit(1);
+	        				}  
+    	        		break;
     	        	}
     	        }
     	        if(commandLine.hasOption("h")){////help
