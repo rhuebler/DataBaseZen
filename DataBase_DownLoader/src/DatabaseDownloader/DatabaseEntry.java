@@ -64,7 +64,8 @@ public class DatabaseEntry {
 		return name;
 	}
 	public int getCode() {
-		return getIndexLine().hashCode();
+		String s = name+"\t"+taxID+"\t"+speciesTaxID+"\t"+assembly_level+"\t"+seq_rel_date+"\t"+asm_name+"\t";
+		return s.hashCode();
 	}
 	public String getLink() {
 		return link;

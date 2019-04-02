@@ -179,7 +179,7 @@ public class DatabaseProcessor {
 	}	
 	
 	private void writeDatabaseIndex() {
-		String header = "Name\ttaxID\tspeciesTaxID\tassembly_level\tseq_rel_date\tasm_name\tFileName\tTime\tNumberTotalContigs\tNumberKeptContigs\tNumberRemovedContigs";
+		String header = "Name\ttaxID\tspeciesTaxID\tassembly_level\tseq_rel_date\tasm_name\tFileName\tDownLoadDate\tNumberTotalContigs\tNumberKeptContigs\tNumberRemovedContigs";
 		if(references!=null) {
 			 try (   FileOutputStream outputStream = new FileOutputStream(output+"index.txt");
 		                Writer writer = new OutputStreamWriter(new GZIPOutputStream(outputStream), "UTF-8")) {
@@ -228,16 +228,18 @@ public class DatabaseProcessor {
 		HashMap<Integer, DatabaseEntry> map = new HashMap<Integer, DatabaseEntry>();
 		for (DatabaseEntry entry : loadDatabaseIndex(pathToIndex)) {
 			map.put(entry.getCode(), entry);
+			map.remove(entry.getCode());
 		}
 		for(DatabaseEntry entry :references) {
 			if(!map.containsKey(entry.getCode())) {
 				entriesToUpdate.add(entry);
 			}
 			else {
+				
 				map.remove(entry.getCode());
 			}
 			if(!map.isEmpty()) {//do something clever
-				
+				System.out.println("Unadressed entries left");
 			}
 		}
 	}
