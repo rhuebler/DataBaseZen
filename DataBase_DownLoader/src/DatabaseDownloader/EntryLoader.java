@@ -92,7 +92,7 @@ public class EntryLoader {
 		try{
 			if(!new File(fileName).exists() || replaceExisting) {
 				URLConnection conn = new URL(url).openConnection();
-				conn.setConnectTimeout(90*1000);
+				conn.setConnectTimeout(30*1000);
 				conn.setReadTimeout(90*1000);
 				try (InputStream in = URI.create(url).toURL().openStream()) {
 					CopyOption[] options = new CopyOption[] {StandardCopyOption.REPLACE_EXISTING};

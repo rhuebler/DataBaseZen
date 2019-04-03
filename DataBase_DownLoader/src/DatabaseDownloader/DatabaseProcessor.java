@@ -1,18 +1,14 @@
 package DatabaseDownloader;
 
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
-import java.io.OutputStreamWriter;
-import java.io.Writer;
-import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.zip.GZIPOutputStream;
-
 import CommandLineProcessor.InputParameterProcessor;
 import Utility.Phylum;
 import Utility.ProcessExecutor;
@@ -142,6 +138,7 @@ public class DatabaseProcessor {
 		}else {
 			getter = new IndexGetter(fileName, keyword, output, rep,keywordFiltering );
 		}
+		System.out.println("Reading NCBI Index file");
 		getter.process();
 	}
 	public ArrayList<DatabaseEntry> getEntries(){
@@ -164,6 +161,27 @@ public class DatabaseProcessor {
 		references = loader.getDownLoadedReferences();
 		writeDatabaseIndex();
 	}
+	
+	public void loadDatabase(ArrayList<DatabaseEntry> entriesToUpdate) {
+		new File(output).mkdir();
+		EntryLoader loader = new EntryLoader() ;
+		loader.setCleanDB(cleanDatabase);
+		System.out.println("Downloading Entries");
+		for(DatabaseEntry entry : entriesToUpdate) {
+			try{
+				loader.download(entry);
+			}catch(Exception e) {
+				e.printStackTrace();
+			}
+		}
+		if(cleanDatabase) {
+			System.out.println("Cleaning Database");
+			cleanDatabase(); 
+		}
+		references = loader.getDownLoadedReferences();
+		System.out.println("Write Index");
+		writeDatabaseIndex();
+	}
 	private void cleanDatabase() {
 		ArrayList<String>command = new ArrayList<String>();
 		command.add("rm");
@@ -177,17 +195,46 @@ public class DatabaseProcessor {
 			executor.run(command);
 		}
 	}	
-	
+	private void appendDatabaseIndex(ArrayList<DatabaseEntry> entriesToUpdate) {
+		if(entriesToUpdate!=null) {	
+			 try ( BufferedWriter br  = new BufferedWriter( new FileWriter(new File(output+"index.txt"),true)))
+			 	{
+				 for(DatabaseEntry entry : entriesToUpdate) {
+						 br.write(entry.getIndexLine());
+						 br.newLine();
+				 }
+		        }catch(IOException io) {
+					io.printStackTrace();
+			}
+		}
+	}
 	private void writeDatabaseIndex() {
 		String header = "Name\ttaxID\tspeciesTaxID\tassembly_level\tseq_rel_date\tasm_name\tFileName\tDownLoadDate\tNumberTotalContigs\tNumberKeptContigs\tNumberRemovedContigs";
 		if(references!=null) {
-			 try (   FileOutputStream outputStream = new FileOutputStream(output+"index.txt");
-		                Writer writer = new OutputStreamWriter(new GZIPOutputStream(outputStream), "UTF-8")) {
-				 writer.write(header);
+			 try ( BufferedWriter br  = new BufferedWriter( new FileWriter(new File(output+"index.txt"),false)))
+			 {
+				br.write(header);
+				br.newLine();
 				 for(DatabaseEntry entry : references) {
-						 writer.write(entry.getIndexLine());
+						br.write(entry.getIndexLine());
+						br.newLine();
 				 }
-
+		        }catch(IOException io) {
+					io.printStackTrace();
+				}
+			}
+		}
+	private void writeDatabaseIndex(ArrayList<DatabaseEntry> entriesToIndex) {
+		String header = "Name\ttaxID\tspeciesTaxID\tassembly_level\tseq_rel_date\tasm_name\tFileName\tDownLoadDate\tNumberTotalContigs\tNumberKeptContigs\tNumberRemovedContigs";
+		if(!entriesToIndex.isEmpty()) {
+			 try ( BufferedWriter br  = new BufferedWriter( new FileWriter(new File(output+"index.txt"),false)))
+			 {
+				br.write(header);
+				br.newLine();
+				 for(DatabaseEntry entry : entriesToIndex) {
+						br.write(entry.getIndexLine());
+						br.newLine();
+				 }
 		        }catch(IOException io) {
 					io.printStackTrace();
 				}
@@ -202,13 +249,9 @@ public class DatabaseProcessor {
 			String line; 
 			int number = 0;
 			while ((line = br.readLine()) != null) {
+				System.out.println(line);
 			    if(number!=0) {
-			    String[]parts =	line.split("\t");
-			    //(String name, String link, String outDir, String assemblyLevel, int taxID, int speciesTaxID, String seq_rel_date, String asm_name)
-			    	DatabaseEntry entry = new DatabaseEntry(parts[0],null,null,parts[3],Integer.parseInt(parts[1]),Integer.parseInt(parts[2]),parts[4],parts[5]);
-			    	entry.setTotalContigs(Integer.parseInt(parts[8]));
-			    	entry.setKeptContigs(Integer.parseInt(parts[9]));
-			    	entry.setFileName(parts[6]);
+			    	DatabaseEntry entry = new DatabaseEntry(line);
 			    	indexEntries.add(entry);
 			    }
 			    number++;
@@ -225,22 +268,42 @@ public class DatabaseProcessor {
 	}
 	public void updateDatabase() {
 		ArrayList<DatabaseEntry> entriesToUpdate = new ArrayList<DatabaseEntry>();
+		ArrayList<DatabaseEntry> currentEntries = new ArrayList<DatabaseEntry>();
 		HashMap<Integer, DatabaseEntry> map = new HashMap<Integer, DatabaseEntry>();
+		System.out.println("Reading Database index");
 		for (DatabaseEntry entry : loadDatabaseIndex(pathToIndex)) {
 			map.put(entry.getCode(), entry);
-			map.remove(entry.getCode());
 		}
-		for(DatabaseEntry entry :references) {
+		System.out.println("Checking if Database is up to date");
+		
+		for(DatabaseEntry entry :getter.getDatabaseEntries()) {
 			if(!map.containsKey(entry.getCode())) {
 				entriesToUpdate.add(entry);
-			}
-			else {
-				
+			}else if(map.containsKey(entry.getCode())){
+				System.out.println("Entry contained");
+				currentEntries.add(entry);
 				map.remove(entry.getCode());
-			}
-			if(!map.isEmpty()) {//do something clever
-				System.out.println("Unadressed entries left");
-			}
+			}	
 		}
+		if(!map.isEmpty()) {//do something clever
+			System.out.println("Unadressed entries left");
+		}
+		System.out.println("Recreating database index");
+		writeDatabaseIndex(currentEntries);
+		if(!entriesToUpdate.isEmpty()) {
+			System.out.println("Updating database");
+			if(cleanDatabase) {
+				System.out.println("Cleaning database");
+				loadDatabase(entriesToUpdate);
+				cleanDatabase();
+				appendDatabaseIndex(references);
+			}else {
+				loadDatabase(entriesToUpdate);
+				appendDatabaseIndex(entriesToUpdate);
+			}
+		}else {
+			System.out.println("Database up to date under current parameters");
+		}
+		
 	}
 }

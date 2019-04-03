@@ -195,7 +195,7 @@ public class InputParameterProcessor {
     	    Option optionDustLevel = Option.builder("").longOpt("dustLevel").hasArg().optionalArg(true).desc("Set Level parameter for DustMasker").build();
     	    Option optionDustWindow = Option.builder("").longOpt("dustWindow").optionalArg(true).desc("Set window size for DustMasker").build();
     	    Option optionDustLinker = Option.builder("").longOpt("dustLinker").hasArg().optionalArg(true).desc("Set Linker Parameter for DustMasker").build();
-    	    Option optionPathToIndex = Option.builder("").longOpt("index").hasArg().optionalArg(true).desc("Set the path to index to update an index").build();
+    	    Option optionPathToIndex = Option.builder("i").longOpt("index").hasArg().optionalArg(true).desc("Set the path to index to update an index").build();
     	    
     	    Options options = new Options();
     	    
