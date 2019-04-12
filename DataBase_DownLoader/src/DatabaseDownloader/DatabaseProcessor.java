@@ -39,6 +39,7 @@ public class DatabaseProcessor {
 		}else{
 			phylum=Phylum.FULLNT;
 		}
+		System.out.println(inProcessor.getSequenceState());
 		if(inProcessor.getSequenceState() != null) {
 			sequenceState = inProcessor.getSequenceState();
 		}else {
@@ -200,6 +201,7 @@ public class DatabaseProcessor {
 			 try ( BufferedWriter br  = new BufferedWriter( new FileWriter(new File(output+"index.txt"),true)))
 			 	{
 				 for(DatabaseEntry entry : entriesToUpdate) {
+					 System.out.println(entry.getIndexLine());
 						 br.write(entry.getIndexLine());
 						 br.newLine();
 				 }
@@ -249,7 +251,7 @@ public class DatabaseProcessor {
 			String line; 
 			int number = 0;
 			while ((line = br.readLine()) != null) {
-				System.out.println(line);
+				//System.out.println(line);
 			    if(number!=0) {
 			    	DatabaseEntry entry = new DatabaseEntry(line);
 			    	indexEntries.add(entry);

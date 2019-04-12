@@ -75,7 +75,7 @@ public class EntryLoader {
 		}catch(IOException io) {
 			io.printStackTrace();
 		}
-		 try (   FileOutputStream outputStream = new FileOutputStream(fileName);
+		 try (   FileOutputStream outputStream = new FileOutputStream(fileName, false);
 	                Writer writer = new OutputStreamWriter(new GZIPOutputStream(outputStream), "UTF-8")) {
 			 for(String s : output)
 	            writer.write(s);

@@ -40,6 +40,7 @@ public class DatabaseEntry {
 				state = State.CONTIG;
 			}
 		else {
+			//System.out.println(assemblyLevel);
 			state = State.COMPLETE;
 		}
 		setAssembly_level(state);

@@ -5,7 +5,6 @@ import org.apache.commons.cli.ParseException;
 import ArtificalReadGenerator.ArtificalDataControler;
 import CommandLineProcessor.InputParameterProcessor;
 import DatabaseDownloader.DatabaseProcessor;
-import DatabaseDownloader.EntryLoader;
 
 public class Database_DownLoader {
 

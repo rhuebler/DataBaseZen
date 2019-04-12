@@ -451,7 +451,7 @@ public class InputParameterProcessor {
 		        			   }else if(Pattern.compile(Pattern.quote("all"), Pattern.CASE_INSENSITIVE).matcher(state).find()){
 		        				   sequenceState = State.ALL;
 		        			   }else {
-		        				   
+		        				   System.out.println(state);
 		        			   }
 	        			   }
 	        		   if (commandLine.hasOption("taxonlist")) {
