@@ -175,6 +175,24 @@ public class DatabaseProcessor {
 				e.printStackTrace();
 			}
 		}
+		
+		//if we fail to download something we collect those entries and try again at the end
+		if(loader.getFailedReferences().size()>0) {
+			ArrayList<DatabaseEntry> list = loader.getFailedReferences();
+			loader.clearFailedReferences();
+			for(DatabaseEntry entry : list) {
+				try{
+					loader.download(entry);
+				}catch(Exception e) {
+					e.printStackTrace();
+				}
+			}
+		}
+		// if we still fail to download them we write an extra index containing them
+		if(loader.getFailedReferences().size()>0) {
+			writeFailedEntires(loader.getFailedReferences());
+		}
+		
 		if(cleanDatabase) {
 			System.out.println("Cleaning Database");
 			cleanDatabase(); 
@@ -183,6 +201,24 @@ public class DatabaseProcessor {
 		System.out.println("Write Index");
 		writeDatabaseIndex();
 	}
+	
+	private void writeFailedEntires(ArrayList<DatabaseEntry> entriesToIndex) {
+		String header = "Name\tlink\toutput_directory";
+
+		if(!entriesToIndex.isEmpty()) {
+			 try ( BufferedWriter br  = new BufferedWriter( new FileWriter(new File(output+"failedEntries.txt"),false)))
+			 {
+				br.write(header);
+				br.newLine();
+				 for(DatabaseEntry entry : entriesToIndex) {
+						br.write(entry.getIndexLine());
+						br.newLine();
+				 }
+		        }catch(IOException io) {
+					io.printStackTrace();
+				}
+			}
+		}
 	private void cleanDatabase() {
 		ArrayList<String>command = new ArrayList<String>();
 		command.add("rm");

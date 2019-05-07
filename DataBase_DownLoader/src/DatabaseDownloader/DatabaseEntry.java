@@ -160,6 +160,9 @@ public class DatabaseEntry {
 		else	
 			return name +"\t"+taxID+"\t"+speciesTaxID+"\t"+assembly_level+"\t"+seq_rel_date+"\t"+asm_name+"\t"+getFilteredFile()+"\t"+ZonedDateTime.now()+"\t"+totalContigs+"\t"+keptContigs+"\t"+(totalContigs-keptContigs);
 }
+	public String failedState() {
+		return name + "\t" +link + "\t"+outDir;
+	}
 	public int getTotalContigs() {
 		return totalContigs;
 	}

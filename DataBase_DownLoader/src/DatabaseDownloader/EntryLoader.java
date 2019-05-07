@@ -25,8 +25,12 @@ public class EntryLoader {
 	private boolean contigLengthFiltering = true;
 	private int lengthThreshold = 1000000;
 	private boolean cleanDB = false;
+	private ArrayList<DatabaseEntry> failedReferences = new ArrayList<DatabaseEntry>();
 	public void setCleanDB(boolean b) {
 		cleanDB =b;
+	}
+	public void clearFailedReferences() {
+		failedReferences.clear();
 	}
 	private void downLoadAssembly(DatabaseEntry entry) {
 		String url = entry.getLink();
@@ -69,10 +73,10 @@ public class EntryLoader {
 				   entry.setKeptContigs(numberKept);
 				   references.add(entry);
 			   }catch(Exception e) {
-			    	System.err.println("FileName "+fileName+"\n"+"URL: "+url);
-			    	e.printStackTrace();
+				   	failedReferences.add(entry);
 			    }
 		}catch(IOException io) {
+			failedReferences.add(entry);
 			io.printStackTrace();
 		}
 		 try (   FileOutputStream outputStream = new FileOutputStream(fileName, false);
@@ -82,6 +86,7 @@ public class EntryLoader {
 
 
 	        }catch(IOException io) {
+	        	failedReferences.add(entry);
 	        	System.err.println("FileName "+fileName+"\n"+"URL: "+url);
 				io.printStackTrace();
 			}
@@ -100,8 +105,7 @@ public class EntryLoader {
 					entry.setCleanDB(cleanDB);
 					references.add(entry);
 		    	}catch(Exception e) {
-		    		System.err.println("FileName "+fileName+"\n"+"URL: "+url);
-		    		e.printStackTrace();
+		    		failedReferences.add(entry);
 		    	}
 			} 
 		}catch( IOException io) {
@@ -130,5 +134,11 @@ public class EntryLoader {
 	}
 	public ArrayList<DatabaseEntry> getDownLoadedReferences(){
 		return references;
+	}
+	public ArrayList<DatabaseEntry> getFailedReferences() {
+		return failedReferences;
+	}
+	public void setFailedReferences(ArrayList<DatabaseEntry> failedReferences) {
+		this.failedReferences = failedReferences;
 	}
 }

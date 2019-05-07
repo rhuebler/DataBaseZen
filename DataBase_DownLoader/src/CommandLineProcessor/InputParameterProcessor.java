@@ -151,7 +151,7 @@ public class InputParameterProcessor {
 		input += "\n-o "+outDir;
 		input +="\n--mode	"+mode;
 		input +="\n--phylum	"+phylum;
-		input +="\n--state	"+ sequenceState;
+		input +="\n--state	";
 		input+="\n--wgs	"+reference;
 		String s = "";
 		for(String tax:taxNames) {
