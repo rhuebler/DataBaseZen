@@ -53,11 +53,13 @@ public class InputParameterProcessor {
 	private  int threads = 1;
 	private boolean cleanDB =false;
 	private String pathToIndex = "";
+	private boolean keywordRemoval = false;
 	
 	private String dustFormat = "fasta";
 	private int dustLevel = 20;
 	private int dustWindow = 64;
 	private int dustLinker = 1 ;
+	private int lengthTreshold = 100000;
 	//cite [1] Morgulis A, Gertz EM, Schaffer AA, Agarwala R. A Fast and Symmetric DUST Implementation to Mask Low-Complexity DNA Sequences. for dustMasker part
 	// constructor
 	public String getDustFormat() {
@@ -170,6 +172,7 @@ public class InputParameterProcessor {
 		input+="\n--dustWindow	"+dustWindow;
 		input+="\n--dustLinker	"+dustLinker;
 		input+="\n--index	"+pathToIndex;
+		input+="\n--length	"+pathToIndex;
 		return input;
 	}
 	private void process(String[] parameters) throws IOException, ParseException{	
@@ -196,7 +199,8 @@ public class InputParameterProcessor {
     	    Option optionDustWindow = Option.builder("").longOpt("dustWindow").optionalArg(true).desc("Set window size for DustMasker").build();
     	    Option optionDustLinker = Option.builder("").longOpt("dustLinker").hasArg().optionalArg(true).desc("Set Linker Parameter for DustMasker").build();
     	    Option optionPathToIndex = Option.builder("i").longOpt("index").hasArg().optionalArg(true).desc("Set the path to index to update an index").build();
-    	    
+    	    Option optionLengthThreshold = Option.builder("l").longOpt("length").hasArg().optionalArg(true).desc("Set length threshold for assemblies exclude parts of assemblies that are shorter").build();
+    	    Option optionKeywordRemoval = Option.builder("k").longOpt("keywordremoval").optionalArg(true).desc("Key word removal, exclude entries that contain uncultured, co-culture species, synthetic").build();
     	    Options options = new Options();
     	    
     	    // add all parameters to the parser
@@ -221,6 +225,8 @@ public class InputParameterProcessor {
     	    options.addOption(optionDustWindow);
     	    options.addOption(optionDustLevel);
     	    options.addOption(optionPathToIndex);
+    	    options.addOption(optionLengthThreshold);
+    	    options.addOption(optionKeywordRemoval);
     	    //parse arguments into the comandline parser
     	        commandLine = parser.parse(options, parameters);
  
@@ -311,6 +317,9 @@ public class InputParameterProcessor {
 	        		
     	        switch (mode) {
     	        	case BOTH:{
+    	        		if (commandLine.hasOption("keywordremoval")) {
+    	        			this.keywordRemoval=true;
+    	        		}
     	        		   if (commandLine.hasOption("phylum")) {
     	        			   if(Pattern.compile(Pattern.quote("bacteria"), Pattern.CASE_INSENSITIVE).matcher(commandLine.getOptionValue("phylum")).find()){
     	        				   phylum = Phylum.BACTERIA;
@@ -352,9 +361,17 @@ public class InputParameterProcessor {
     	        				   System.exit(1);
     	        			   }
     	        		   }
+    	        		   if(commandLine.hasOption("length")) {
+    	        			   String length = commandLine.getOptionValue("length");
+    	        			  lengthTreshold = Integer.parseInt(length);
+    	        		   }
     	        		break;
     	        		}
     	        	case DOWNLOAD:{
+    	        		if (commandLine.hasOption("keywordremoval")) {
+    	        			this.keywordRemoval=true;
+    	        		}
+    	        		
     	        		if (commandLine.hasOption("phylum")) {
     	        				if(Pattern.compile(Pattern.quote("bacteria"), Pattern.CASE_INSENSITIVE).matcher(commandLine.getOptionValue("phylum")).find()){
     	        					phylum = Phylum.BACTERIA;
@@ -427,6 +444,9 @@ public class InputParameterProcessor {
 	    	        	break;
     	        	}
     	        	case UPDATE:{
+    	        		if (commandLine.hasOption("keywordremoval")) {
+    	        			this.keywordRemoval=true;
+    	        		}
 	    	        		if (commandLine.hasOption("phylum")) {
 		        				if(Pattern.compile(Pattern.quote("bacteria"), Pattern.CASE_INSENSITIVE).matcher(commandLine.getOptionValue("phylum")).find()){
 		        					phylum = Phylum.BACTERIA;
@@ -497,5 +517,17 @@ public class InputParameterProcessor {
 //      			   System.exit(1);
 //      		   }
     	    }
+	public int getLengthTreshold() {
+		return lengthTreshold;
+	}
+	public void setLengthTreshold(int lengthTreshold) {
+		this.lengthTreshold = lengthTreshold;
+	}
+	public boolean isKeywordRemoval() {
+		return keywordRemoval;
+	}
+	public void setKeywordRemoval(boolean keywordRemoval) {
+		this.keywordRemoval = keywordRemoval;
+	}
     }
   

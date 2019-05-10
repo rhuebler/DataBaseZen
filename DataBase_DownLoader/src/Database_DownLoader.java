@@ -9,10 +9,10 @@ import DatabaseDownloader.DatabaseProcessor;
 public class Database_DownLoader {
 
 	public static void main(String[] args) {
-		// TODO Auto-generated method stub
+		// https://drive.google.com/drive/folders/1wgMlmPpr3nVPUMUD7K_MYATkQk1AvY2W
 		try {
 			InputParameterProcessor inProcessor = new InputParameterProcessor(args);
-			inProcessor.getAllOptions();
+			System.out.println(inProcessor.getAllOptions());
 			switch(inProcessor.getExecutionMode()) {
 				default:{
 					DatabaseProcessor processor = new DatabaseProcessor(inProcessor);

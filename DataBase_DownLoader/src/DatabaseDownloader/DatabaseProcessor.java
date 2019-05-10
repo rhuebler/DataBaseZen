@@ -16,6 +16,7 @@ import Utility.ReferenceGenome;
 import Utility.State;
 
 public class DatabaseProcessor {
+	
 	private IndexGetter getter;
 	private Phylum phylum;
 	private State sequenceState;
@@ -27,6 +28,7 @@ public class DatabaseProcessor {
 	private ArrayList<String> dustCommand;
 	private boolean keywordFiltering = true;
 	private String pathToIndex="";
+	private int length;
 	public  ArrayList<DatabaseEntry> getReferences() {
 		return references;
 	}
@@ -68,6 +70,8 @@ public class DatabaseProcessor {
 			command.add("-linker"); command.add(""+inProcessor.getDustLinker());
 		}
 		pathToIndex = inProcessor.getPathToIndex();
+		length = inProcessor.getLengthTreshold();
+		keywordFiltering = inProcessor.isKeywordRemoval();
 	}
 	
 	public void process() {
@@ -149,6 +153,7 @@ public class DatabaseProcessor {
 		new File(output).mkdir();
 		EntryLoader loader = new EntryLoader() ;
 		loader.setCleanDB(cleanDatabase);
+		loader.setLengthThreshold(length);
 		for(DatabaseEntry entry : getEntries()) {
 			try{
 				loader.download(entry);
@@ -318,7 +323,6 @@ public class DatabaseProcessor {
 			if(!map.containsKey(entry.getCode())) {
 				entriesToUpdate.add(entry);
 			}else if(map.containsKey(entry.getCode())){
-				System.out.println("Entry contained");
 				currentEntries.add(entry);
 				map.remove(entry.getCode());
 			}	

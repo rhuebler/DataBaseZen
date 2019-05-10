@@ -141,4 +141,8 @@ public class EntryLoader {
 	public void setFailedReferences(ArrayList<DatabaseEntry> failedReferences) {
 		this.failedReferences = failedReferences;
 	}
+	public void setLengthThreshold(int length) {
+		this.lengthThreshold = length;
+		
+	}
 }
