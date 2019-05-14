@@ -1,15 +1,14 @@
 package DatabaseDownloader;
 
 import java.io.BufferedReader;
-import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import CommandLineProcessor.InputParameterProcessor;
+import Utility.IndexWriter;
 import Utility.Phylum;
 import Utility.ProcessExecutor;
 import Utility.ReferenceGenome;
@@ -29,6 +28,7 @@ public class DatabaseProcessor {
 	private boolean keywordFiltering = true;
 	private String pathToIndex="";
 	private int length;
+	private IndexWriter writer = new IndexWriter();
 	public  ArrayList<DatabaseEntry> getReferences() {
 		return references;
 	}
@@ -154,18 +154,21 @@ public class DatabaseProcessor {
 		EntryLoader loader = new EntryLoader() ;
 		loader.setCleanDB(cleanDatabase);
 		loader.setLengthThreshold(length);
+		writer.initializeDatabaseIndex();
 		for(DatabaseEntry entry : getEntries()) {
 			try{
 				loader.download(entry);
+				writer.appendEntryToDatabaseIndex(entry);
 			}catch(Exception e) {
 				e.printStackTrace();
 			}
 		}
 		if(cleanDatabase) {
+			
 			cleanDatabase(); 
+			writer.writeDatabaseIndex(loader.getDownLoadedReferences());
 		}
 		references = loader.getDownLoadedReferences();
-		writeDatabaseIndex();
 	}
 	
 	public void loadDatabase(ArrayList<DatabaseEntry> entriesToUpdate) {
@@ -176,6 +179,7 @@ public class DatabaseProcessor {
 		for(DatabaseEntry entry : entriesToUpdate) {
 			try{
 				loader.download(entry);
+				writer.appendEntryToDatabaseIndex(entry);
 			}catch(Exception e) {
 				e.printStackTrace();
 			}
@@ -188,6 +192,7 @@ public class DatabaseProcessor {
 			for(DatabaseEntry entry : list) {
 				try{
 					loader.download(entry);
+					writer.appendEntryToDatabaseIndex(entry);
 				}catch(Exception e) {
 					e.printStackTrace();
 				}
@@ -195,35 +200,12 @@ public class DatabaseProcessor {
 		}
 		// if we still fail to download them we write an extra index containing them
 		if(loader.getFailedReferences().size()>0) {
-			writeFailedEntires(loader.getFailedReferences());
+			writer.writeFailedEntires(loader.getFailedReferences());
 		}
-		
-		if(cleanDatabase) {
-			System.out.println("Cleaning Database");
-			cleanDatabase(); 
-		}
-		references = loader.getDownLoadedReferences();
-		System.out.println("Write Index");
-		writeDatabaseIndex();
+		references = loader.getDownLoadedReferences();	
 	}
 	
-	private void writeFailedEntires(ArrayList<DatabaseEntry> entriesToIndex) {
-		String header = "Name\tlink\toutput_directory";
-
-		if(!entriesToIndex.isEmpty()) {
-			 try ( BufferedWriter br  = new BufferedWriter( new FileWriter(new File(output+"failedEntries.txt"),false)))
-			 {
-				br.write(header);
-				br.newLine();
-				 for(DatabaseEntry entry : entriesToIndex) {
-						br.write(entry.getIndexLine());
-						br.newLine();
-				 }
-		        }catch(IOException io) {
-					io.printStackTrace();
-				}
-			}
-		}
+	
 	private void cleanDatabase() {
 		ArrayList<String>command = new ArrayList<String>();
 		command.add("rm");
@@ -237,52 +219,7 @@ public class DatabaseProcessor {
 			executor.run(command);
 		}
 	}	
-	private void appendDatabaseIndex(ArrayList<DatabaseEntry> entriesToUpdate) {
-		if(entriesToUpdate!=null) {	
-			 try ( BufferedWriter br  = new BufferedWriter( new FileWriter(new File(output+"index.txt"),true)))
-			 	{
-				 for(DatabaseEntry entry : entriesToUpdate) {
-					 System.out.println(entry.getIndexLine());
-						 br.write(entry.getIndexLine());
-						 br.newLine();
-				 }
-		        }catch(IOException io) {
-					io.printStackTrace();
-			}
-		}
-	}
-	private void writeDatabaseIndex() {
-		String header = "Name\ttaxID\tspeciesTaxID\tassembly_level\tseq_rel_date\tasm_name\tFileName\tDownLoadDate\tNumberTotalContigs\tNumberKeptContigs\tNumberRemovedContigs";
-		if(references!=null) {
-			 try ( BufferedWriter br  = new BufferedWriter( new FileWriter(new File(output+"index.txt"),false)))
-			 {
-				br.write(header);
-				br.newLine();
-				 for(DatabaseEntry entry : references) {
-						br.write(entry.getIndexLine());
-						br.newLine();
-				 }
-		        }catch(IOException io) {
-					io.printStackTrace();
-				}
-			}
-		}
-	private void writeDatabaseIndex(ArrayList<DatabaseEntry> entriesToIndex) {
-		String header = "Name\ttaxID\tspeciesTaxID\tassembly_level\tseq_rel_date\tasm_name\tFileName\tDownLoadDate\tNumberTotalContigs\tNumberKeptContigs\tNumberRemovedContigs";
-		if(!entriesToIndex.isEmpty()) {
-			 try ( BufferedWriter br  = new BufferedWriter( new FileWriter(new File(output+"index.txt"),false)))
-			 {
-				br.write(header);
-				br.newLine();
-				 for(DatabaseEntry entry : entriesToIndex) {
-						br.write(entry.getIndexLine());
-						br.newLine();
-				 }
-		        }catch(IOException io) {
-					io.printStackTrace();
-				}
-			}
-		}
+
 	private ArrayList<DatabaseEntry> loadDatabaseIndex(String pathToIndex){
 		ArrayList<DatabaseEntry> indexEntries= new ArrayList<DatabaseEntry>();
 		File indexFile = new File(pathToIndex) ;
@@ -331,17 +268,22 @@ public class DatabaseProcessor {
 			System.out.println("Unadressed entries left");
 		}
 		System.out.println("Recreating database index");
-		writeDatabaseIndex(currentEntries);
+		writer.setOutput(output);
+		writer.initializeDatabaseIndex();
+		writer.writeDatabaseIndex(currentEntries);
 		if(!entriesToUpdate.isEmpty()) {
 			System.out.println("Updating database");
 			if(cleanDatabase) {
 				System.out.println("Cleaning database");
 				loadDatabase(entriesToUpdate);
+				//recreate index after cleaning database
+				writer.setOutput(output);
+				writer.initializeDatabaseIndex();
+				writer.writeDatabaseIndex(currentEntries);
 				cleanDatabase();
-				appendDatabaseIndex(references);
+				writer.appendEntriesToDatabaseIndex(references);
 			}else {
 				loadDatabase(entriesToUpdate);
-				appendDatabaseIndex(entriesToUpdate);
 			}
 		}else {
 			System.out.println("Database up to date under current parameters");

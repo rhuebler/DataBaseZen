@@ -23,7 +23,7 @@ public class EntryLoader {
 	private ArrayList<DatabaseEntry> references = new ArrayList<DatabaseEntry>();
 	private boolean replaceExisting = true;
 	private boolean contigLengthFiltering = true;
-	private int lengthThreshold = 1000000;
+	private int lengthThreshold = 100000;
 	private boolean cleanDB = false;
 	private ArrayList<DatabaseEntry> failedReferences = new ArrayList<DatabaseEntry>();
 	public void setCleanDB(boolean b) {
@@ -78,7 +78,8 @@ public class EntryLoader {
 		}catch(IOException io) {
 			failedReferences.add(entry);
 			io.printStackTrace();
-		}
+		}	
+		if(output.size()>0) {
 		 try (   FileOutputStream outputStream = new FileOutputStream(fileName, false);
 	                Writer writer = new OutputStreamWriter(new GZIPOutputStream(outputStream), "UTF-8")) {
 			 for(String s : output)
@@ -90,6 +91,7 @@ public class EntryLoader {
 	        	System.err.println("FileName "+fileName+"\n"+"URL: "+url);
 				io.printStackTrace();
 			}
+		}
 	}
 	private void downLoadCompleteReference(DatabaseEntry entry) {
 		String url = entry.getLink();
