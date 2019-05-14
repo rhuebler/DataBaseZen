@@ -7,6 +7,9 @@ import java.time.ZonedDateTime;
 import Utility.State;
 
 public class DatabaseEntry {
+	/**
+	 * This class represents an entry out of NCBI
+	 */
 	private String name;
 	private String link;
 	private String outDir;
@@ -25,7 +28,6 @@ public class DatabaseEntry {
 		this.link = link;
 		this.name = name.toString().replace("=", "_").replace("/", "_");
 		this.outDir = outDir;
-		//System.out.println(name +"\t"+ link +"\t"+ outDir+"\t"+assemblyLevel+"\t"+ taxID+"\t"+ speciesTaxID+"\t"+ seq_rel_date+"\t"+ asm_name);
 		State state = null;
 		if(assemblyLevel.equals("Complete genome")){
 				state = State.COMPLETE;

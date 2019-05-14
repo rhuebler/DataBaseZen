@@ -8,7 +8,11 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.util.ArrayList;
 
-
+/**
+ *  the purpose of this class is to open and process the summary files from NCBI then store those entries as DatabaseEntry objects
+ * @author huebler
+ *
+ */
 
 
 public class IndexGetter {

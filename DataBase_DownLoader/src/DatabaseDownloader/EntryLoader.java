@@ -20,6 +20,9 @@ import java.util.ArrayList;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 public class EntryLoader {
+	/**
+	 * This class is used to download genomes from NCBI. It's subfunctions return true if the download was successfull
+	 */
 	private ArrayList<DatabaseEntry> references = new ArrayList<DatabaseEntry>();
 	private boolean replaceExisting = true;
 	private boolean contigLengthFiltering = true;
@@ -32,10 +35,11 @@ public class EntryLoader {
 	public void clearFailedReferences() {
 		failedReferences.clear();
 	}
-	private void downLoadAssembly(DatabaseEntry entry) {
+	private boolean downLoadAssembly(DatabaseEntry entry) {
 		String url = entry.getLink();
 		String fileName = entry.getOutFile();
-		  ArrayList<String> output = new  ArrayList<String>();
+		ArrayList<String> output = new  ArrayList<String>();
+		boolean result = false;
 		try{
 			URLConnection conn = new URL(url).openConnection();
 			 conn.setConnectTimeout(90*1000);
@@ -72,6 +76,7 @@ public class EntryLoader {
 				   entry.setTotalContigs(totalNumber);
 				   entry.setKeptContigs(numberKept);
 				   references.add(entry);
+				  
 			   }catch(Exception e) {
 				   	failedReferences.add(entry);
 			    }
@@ -82,20 +87,22 @@ public class EntryLoader {
 		if(output.size()>0) {
 		 try (   FileOutputStream outputStream = new FileOutputStream(fileName, false);
 	                Writer writer = new OutputStreamWriter(new GZIPOutputStream(outputStream), "UTF-8")) {
-			 for(String s : output)
+			 for(String s : output) {
 	            writer.write(s);
-
-
+			 }
 	        }catch(IOException io) {
 	        	failedReferences.add(entry);
 	        	System.err.println("FileName "+fileName+"\n"+"URL: "+url);
 				io.printStackTrace();
 			}
+		 result = true;
 		}
+		return result;
 	}
-	private void downLoadCompleteReference(DatabaseEntry entry) {
+	private boolean downLoadCompleteReference(DatabaseEntry entry) {
 		String url = entry.getLink();
 		String fileName = entry.getOutFile();
+		boolean result = false;
 		try{
 			if(!new File(fileName).exists() || replaceExisting) {
 				URLConnection conn = new URL(url).openConnection();
@@ -106,6 +113,7 @@ public class EntryLoader {
 					Files.copy(in, Paths.get(fileName), options);
 					entry.setCleanDB(cleanDB);
 					references.add(entry);
+					result = true;
 		    	}catch(Exception e) {
 		    		failedReferences.add(entry);
 		    	}
@@ -113,26 +121,27 @@ public class EntryLoader {
 		}catch( IOException io) {
 			io.printStackTrace();
 		}
+		return result;
 	}
-	public void download(DatabaseEntry entry) throws Exception {
+	public boolean download(DatabaseEntry entry) throws Exception {
 		String url = entry.getLink();
+		boolean result = false;
 		if(url.contains("material_genomic")) {
 			System.err.println(url);
 		}
 		if( contigLengthFiltering == true) {
 			switch(entry.getAssembly_level()) {
 				case COMPLETE:
-					downLoadCompleteReference(entry);
+					result = downLoadCompleteReference(entry);
 					break;
 				default:
-					downLoadAssembly(entry);
+					result = downLoadAssembly(entry);
 				break;	
 			}
-			
 		}else {
-			downLoadCompleteReference(entry);
+		   result = downLoadCompleteReference(entry);
 		}
-		
+		return result;
 	}
 	public ArrayList<DatabaseEntry> getDownLoadedReferences(){
 		return references;

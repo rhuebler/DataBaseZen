@@ -23,7 +23,7 @@ import Utility.SimulateFormat;
 import Utility.State;
 
 /**
- * This class is used To Parse Input Parameters for RMA Extractor to make input more flexible and less error prone
+ * This class is used To Parse Input Parameters for the databsease to make input more flexible and less error prone
  * uses the console parameters as input and fill up all Parameter slots to control subsequent functions
  * @author huebler
  *

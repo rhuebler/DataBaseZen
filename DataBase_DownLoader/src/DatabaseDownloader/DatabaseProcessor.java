@@ -13,9 +13,12 @@ import Utility.Phylum;
 import Utility.ProcessExecutor;
 import Utility.ReferenceGenome;
 import Utility.State;
-
+/**
+ * iS used to Download and update reference databses 
+ * @author huebler
+ *
+ */
 public class DatabaseProcessor {
-	
 	private IndexGetter getter;
 	private Phylum phylum;
 	private State sequenceState;
@@ -157,8 +160,9 @@ public class DatabaseProcessor {
 		writer.initializeDatabaseIndex();
 		for(DatabaseEntry entry : getEntries()) {
 			try{
-				loader.download(entry);
-				writer.appendEntryToDatabaseIndex(entry);
+				boolean result = loader.download(entry);
+				if(result)
+					writer.appendEntryToDatabaseIndex(entry);
 			}catch(Exception e) {
 				e.printStackTrace();
 			}
@@ -178,8 +182,9 @@ public class DatabaseProcessor {
 		System.out.println("Downloading Entries");
 		for(DatabaseEntry entry : entriesToUpdate) {
 			try{
-				loader.download(entry);
-				writer.appendEntryToDatabaseIndex(entry);
+				boolean result = loader.download(entry);
+				if(result)
+					writer.appendEntryToDatabaseIndex(entry);
 			}catch(Exception e) {
 				e.printStackTrace();
 			}
@@ -191,8 +196,9 @@ public class DatabaseProcessor {
 			loader.clearFailedReferences();
 			for(DatabaseEntry entry : list) {
 				try{
-					loader.download(entry);
-					writer.appendEntryToDatabaseIndex(entry);
+					boolean result = loader.download(entry);
+					if(result)
+						writer.appendEntryToDatabaseIndex(entry);
 				}catch(Exception e) {
 					e.printStackTrace();
 				}

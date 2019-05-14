@@ -7,7 +7,11 @@ import java.io.IOException;
 import java.util.ArrayList;
 
 import DatabaseDownloader.DatabaseEntry;
-
+/**
+ * Writes and updates Database indeices 
+ * @author huebler
+ *
+ */
 public class IndexWriter {
 	private String header = "Name\ttaxID\tspeciesTaxID\tassembly_level\tseq_rel_date\tasm_name\tFileName\tDownLoadDate\tNumberTotalContigs\tNumberKeptContigs\tNumberRemovedContigs";
 	private ArrayList<DatabaseEntry> references;
