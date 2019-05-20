@@ -56,16 +56,16 @@ public class DatabaseEntry {
 		name = parts[0];
 		outDir = new File(parts[6]).getCanonicalPath();
 		State state = null;
-		if(parts[3].equals("Complete genome")){
+		if(parts[3].equals("COMPLETE")){
 				state = State.COMPLETE;
 		}
-		else if(parts[3].equals("Chromosome")) {
+		else if(parts[3].equals("CHROMOSOME")) {
 				state = State.CHROMOSOME;
 			}
-		else if(parts[3].equals("Scaffold")) {
+		else if(parts[3].equals("SCAFFOLD")) {
 				state =State.SCAFFOLD;
 			}
-		else if(parts[3].equals("Contig")) {
+		else if(parts[3].equals("CONTIG")) {
 				state = State.CONTIG;
 			}
 		else {

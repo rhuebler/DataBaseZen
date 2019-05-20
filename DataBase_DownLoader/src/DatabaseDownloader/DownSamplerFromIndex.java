@@ -9,14 +9,18 @@ import java.util.ArrayList;
 import java.util.HashMap;
 
 public class DownSamplerFromIndex {
+	taxIDGetter taxGetter = new taxIDGetter();
 	public void process(String pathToIndex) {
-		HashMap<Integer,ArrayList<DatabaseEntry>> entries = loadDatabaseIndex(pathToIndex);
+		taxGetter.process();
+		HashMap<Integer,HashMap<Integer,DatabaseEntry>> entries = loadDatabaseIndex(pathToIndex);
 		for(Integer key: entries.keySet()) {
-			System.out.println(key+"\t"+entries.get(key).size());
+			System.out.println(taxGetter.getNcbiIdToNameMap().get(key)+"\t"+entries.get(key).size());
+//			for(DatabaseEntry e: entries.get(key))
+//    			System.out.println(e.getIndexLine());
 		}
 	}
-	private HashMap<Integer,ArrayList<DatabaseEntry>> loadDatabaseIndex(String pathToIndex){
-		HashMap<Integer,ArrayList<DatabaseEntry>> indexEntries = new HashMap<Integer,ArrayList<DatabaseEntry>>();
+	private HashMap<Integer,HashMap<Integer,DatabaseEntry>> loadDatabaseIndex(String pathToIndex){
+		HashMap<Integer,HashMap<Integer,DatabaseEntry>> indexEntries = new HashMap<Integer,HashMap<Integer,DatabaseEntry>>();
 		File indexFile = new File(pathToIndex) ;
 		BufferedReader br;
 		try {
@@ -28,13 +32,15 @@ public class DownSamplerFromIndex {
 			    if(number!=0) {
 			    	DatabaseEntry entry = new DatabaseEntry(line);
 			    	if(indexEntries.containsKey(entry.getSpeciesTaxID())) {
-			    		ArrayList<DatabaseEntry> underSpecies = indexEntries.get(entry.getSpeciesTaxID());
-			    		underSpecies.add(entry);
-			    		indexEntries.replace(entry.getSpeciesTaxID(), underSpecies);
+			    		HashMap<Integer,DatabaseEntry> underSpecies  = indexEntries.get(entry.getSpeciesTaxID());
+//			    		if(underSpecies.containsKey(entry.getCode()))
+//			    			System.out.println(line);
+			    		underSpecies.put(entry.getCode(),entry);
+			    		indexEntries.replace(entry.getSpeciesTaxID(), underSpecies);		    		
 			    	}else {
-			    		ArrayList<DatabaseEntry> underSpecies = new ArrayList<DatabaseEntry>();
-			    		underSpecies.add(entry);
-			    		indexEntries.put(entry.getSpeciesTaxID(), underSpecies);
+			    		HashMap<Integer,DatabaseEntry> underSpecies  = new HashMap<Integer,DatabaseEntry>();
+			    		underSpecies.put(entry.getCode(),entry);
+			    		indexEntries.put(entry.getSpeciesTaxID(), underSpecies);	
 			    	}
 			    }
 			    number++;

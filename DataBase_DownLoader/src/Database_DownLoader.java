@@ -34,16 +34,19 @@ public class Database_DownLoader {
 					processor.loadDatabase();
 					break;
 					}
-				case CREATE:
+				case CREATE:{
 					ArtificalDataControler controler = new ArtificalDataControler(inProcessor);
 					controler.process();
 					//System.err.println("Currently not implemented!");
 					break;
-				case UPDATE:
+					}
+				case UPDATE:{
 					DatabaseProcessor processor = new DatabaseProcessor(inProcessor);
 					processor.process();
-					processor.updateDatabase();
-					break;	
+					//processor.updateDatabase();
+					processor.downsample();
+					break;
+					}	
 			}
 		} catch (IOException e) {
 			// TODO Auto-generated catch block

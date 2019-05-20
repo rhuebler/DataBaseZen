@@ -44,7 +44,7 @@ public class EntryLoader {
 			URLConnection conn = new URL(url).openConnection();
 			 conn.setConnectTimeout(90*1000);
 			 conn.setReadTimeout(90*1000);
-			   try (InputStream in = URI.create(url).toURL().openStream()) {
+			   try (InputStream in = conn.getInputStream()) {
 				   InputStream gzipStream = new GZIPInputStream(in);
 				   Reader decoder = new InputStreamReader(gzipStream);
 				   BufferedReader buffered = new BufferedReader(decoder);
@@ -108,7 +108,7 @@ public class EntryLoader {
 				URLConnection conn = new URL(url).openConnection();
 				conn.setConnectTimeout(30*1000);
 				conn.setReadTimeout(90*1000);
-				try (InputStream in = URI.create(url).toURL().openStream()) {
+				try (InputStream in = conn.getInputStream()) {
 					CopyOption[] options = new CopyOption[] {StandardCopyOption.REPLACE_EXISTING};
 					Files.copy(in, Paths.get(fileName), options);
 					entry.setCleanDB(cleanDB);

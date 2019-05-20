@@ -157,6 +157,7 @@ public class DatabaseProcessor {
 		EntryLoader loader = new EntryLoader() ;
 		loader.setCleanDB(cleanDatabase);
 		loader.setLengthThreshold(length);
+		writer.setOutput(output);
 		writer.initializeDatabaseIndex();
 		for(DatabaseEntry entry : getEntries()) {
 			try{
@@ -168,7 +169,6 @@ public class DatabaseProcessor {
 			}
 		}
 		if(cleanDatabase) {
-			
 			cleanDatabase(); 
 			writer.writeDatabaseIndex(loader.getDownLoadedReferences());
 		}
@@ -252,6 +252,10 @@ public class DatabaseProcessor {
 		
 		return indexEntries;
 	}
+	public void downsample() {
+		DownSamplerFromIndex downSampler = new DownSamplerFromIndex();
+		downSampler.process(pathToIndex);
+	}
 	public void updateDatabase() {
 		ArrayList<DatabaseEntry> entriesToUpdate = new ArrayList<DatabaseEntry>();
 		ArrayList<DatabaseEntry> currentEntries = new ArrayList<DatabaseEntry>();
@@ -276,7 +280,7 @@ public class DatabaseProcessor {
 		System.out.println("Recreating database index");
 		writer.setOutput(output);
 		writer.initializeDatabaseIndex();
-		writer.writeDatabaseIndex(currentEntries);
+		writer.appendEntriesToDatabaseIndex(currentEntries);
 		if(!entriesToUpdate.isEmpty()) {
 			System.out.println("Updating database");
 			if(cleanDatabase) {
