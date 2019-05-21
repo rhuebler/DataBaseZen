@@ -24,6 +24,7 @@ public class DatabaseEntry {
 	private String fileName ="";
 	private boolean cleanDB = false;
 	private String time;
+	private double qualityValue;
 	public DatabaseEntry(String name, String link, String outDir, String assemblyLevel, int taxID, int speciesTaxID, String seq_rel_date, String asm_name){
 		this.link = link;
 		this.name = name.toString().replace("=", "_").replace("/", "_");
@@ -80,6 +81,29 @@ public class DatabaseEntry {
     	setKeptContigs(Integer.parseInt(parts[9]));
     	setFileName(parts[6]);
     	time = parts[7];
+	}
+	public void setQualityValue() {
+		switch(assembly_level){
+			case COMPLETE:
+				qualityValue = 100;
+				break;
+			case CHROMOSOME:
+				qualityValue = (90-(totalContigs-keptContigs)/2);
+				
+				break;
+			case SCAFFOLD:
+				qualityValue = (80-(totalContigs-keptContigs)/2);
+				break;	
+			case CONTIG:
+				qualityValue = (70-(totalContigs-keptContigs)/2);
+				break;
+		default:
+			qualityValue=0;
+			break;
+		}
+	}
+	public double getQualityValue() {
+		return qualityValue;
 	}
 	public void setCleanDB(boolean b) {
 		cleanDB =b;

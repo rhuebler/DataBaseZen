@@ -5,7 +5,21 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 
+import DatabaseDownloader.DatabaseEntry;
+
 public class ProcessExecutor {
+	public void removeFiles(ArrayList<DatabaseEntry> entriesToRemove, boolean cleanDB) {
+		ArrayList<String> command = new ArrayList<String>();
+		command.add("rm");
+		for(DatabaseEntry entry : entriesToRemove) {
+			if(!cleanDB) {
+				command.add(entry.getOutFile());
+			}else {
+				command.add(entry.getFilteredFile());
+			}
+		}
+		run(command);
+	}
 	public boolean run(ArrayList<String> command){
 		if(command!=null&&command.size()!=0) {
 			String l ="";

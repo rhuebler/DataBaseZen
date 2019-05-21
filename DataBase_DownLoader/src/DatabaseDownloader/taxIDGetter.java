@@ -5,10 +5,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.net.URI;
 import java.net.URL;
 import java.net.URLConnection;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
@@ -18,7 +16,7 @@ import java.util.zip.ZipInputStream;
 public class taxIDGetter {
 	 HashMap<String,Integer> ncbiNameToId;
 	 HashMap<Integer,String> ncbiIdToName;
-	String location = "https://github.com/danielhuson/megan-ce/blob/master/resources/files/ncbi.map";
+	String location = "https://raw.githubusercontent.com/danielhuson/megan-ce/master/resources/files/ncbi.map";
 	public HashMap<String,Integer>  getNcbiNameToIdMap(){
 		return this.ncbiNameToId;
 	}
@@ -43,10 +41,10 @@ public class taxIDGetter {
 			 conn.setConnectTimeout(90*1000);
 			 conn.setReadTimeout(90*1000);
 			   try (InputStream in = conn.getInputStream()) {
-				   InputStreamReader reader = new  InputStreamReader(in);
+				   InputStreamReader reader = new InputStreamReader(in);
 				   BufferedReader buffered = new BufferedReader(reader);
 				   String line;
-				   while((line = buffered.readLine())!=null) {
+				   while((line = buffered.readLine()) != null) {
 						String[] frags = line.split("\\t");
 						ncbiNameMap.put(frags[1], Integer.parseInt(frags[0]));
 						ncbiIDMap.put(Integer.parseInt(frags[0]), frags[1]);
@@ -62,36 +60,53 @@ public class taxIDGetter {
 			io.printStackTrace();
 		}
 	}
-//	public void process() {
-//		try{
-//			byte[] array = null;
-//			URLConnection conn = new URL(location).openConnection();
-//			 conn.setConnectTimeout(90*1000);
-//			 conn.setReadTimeout(90*1000);
-//			   try (InputStream in = conn.getInputStream()) {
-//				   ZipInputStream zipStream = new ZipInputStream(in);
-//				   ZipEntry zipEntry = zipStream.getNextEntry();
-//			       while (zipEntry != null) {
-//			    	   System.out.println(zipEntry.getName());
-//			    	   byte[] btoRead = new byte[1024];
-//			    	   ByteArrayOutputStream bout = new ByteArrayOutputStream();; //<- I don't want this!
-//			            int len = 0;
-//			            while ((len = zipStream.read(btoRead)) != -1) {
-//			                bout.write(btoRead, 0, len);
-//			            }
-//			            bout.close();
-//			            array =  bout.toByteArray();
-//			            zipEntry = zipStream.getNextEntry();
-//			       }
-//				   zipStream.close();
-//				  
-//				 String lines = new String(array); 
-//				 System.out.println(lines);
-//			   }catch(Exception e) {
-//				   e.printStackTrace();
-//			    }
-//		}catch(IOException io) {
-//			io.printStackTrace();
-//		}
-//	}
+	public void processNCBIZipFile() {
+		HashMap<Integer,String> nameToID = new HashMap<Integer,String>();
+		String location = "ftp://ftp.ncbi.nih.gov/pub/taxonomy/taxdmp.zip";
+		try{
+			byte[] array = null;
+			URLConnection conn = new URL(location).openConnection();
+			 conn.setConnectTimeout(90*1000);
+			 conn.setReadTimeout(90*1000);
+			   try (InputStream in = conn.getInputStream()) {
+				   ZipInputStream zipStream = new ZipInputStream(in);
+				   ZipEntry zipEntry = zipStream.getNextEntry();
+			       while (zipEntry != null) {
+			    	   if(zipEntry.getName().equals("names.dmp")) {
+			    		   byte[] btoRead = new byte[1024];
+				    	   ByteArrayOutputStream bout = new ByteArrayOutputStream();; //<- I don't want this!
+				            int len = 0;
+				            while ((len = zipStream.read(btoRead)) != -1) {
+				                bout.write(btoRead, 0, len);
+				            }
+				            bout.close();
+				            array =  bout.toByteArray();
+			    	   }
+			    	
+			            zipEntry = zipStream.getNextEntry();
+			       }
+				   zipStream.close();
+				  
+				 String lines = new String(array); 
+				 
+				 for(String line:lines.split("\\n")) {
+					String[] parts = line.split("\\t");
+					//System.out.println(parts[0]+"\t"+parts[2]);
+					if(!nameToID.containsKey(Integer.parseInt(parts[0])))
+						nameToID.put(Integer.parseInt(parts[0]), parts[2]);
+					else {
+						if(nameToID.get(Integer.parseInt(parts[0])).length()<parts[2].length()) {
+							nameToID.replace(Integer.parseInt(parts[0]), parts[2]);
+						}
+					}
+					
+				 }
+				 ncbiIdToName = nameToID;
+			   }catch(Exception e) {
+				   e.printStackTrace();
+			    }
+		}catch(IOException io) {
+			io.printStackTrace();
+		}
+	}
 }

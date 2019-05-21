@@ -255,6 +255,16 @@ public class DatabaseProcessor {
 	public void downsample() {
 		DownSamplerFromIndex downSampler = new DownSamplerFromIndex();
 		downSampler.process(pathToIndex);
+		ArrayList<DatabaseEntry> entriesToRemove = downSampler.getEntriesToRemvoe();
+		
+		
+		
+		
+		
+		//Here we update our DB Index
+		ArrayList<DatabaseEntry> allEntries = loadDatabaseIndex(pathToIndex);
+		allEntries.removeAll(entriesToRemove);
+		writer.writeDatabaseIndex(allEntries);
 	}
 	public void updateDatabase() {
 		ArrayList<DatabaseEntry> entriesToUpdate = new ArrayList<DatabaseEntry>();
@@ -287,7 +297,6 @@ public class DatabaseProcessor {
 				System.out.println("Cleaning database");
 				loadDatabase(entriesToUpdate);
 				//recreate index after cleaning database
-				writer.setOutput(output);
 				writer.initializeDatabaseIndex();
 				writer.writeDatabaseIndex(currentEntries);
 				cleanDatabase();

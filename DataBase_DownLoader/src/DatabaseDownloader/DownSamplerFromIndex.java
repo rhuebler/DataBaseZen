@@ -7,14 +7,27 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import Utility.DatabaseEntryComparator;
 
 public class DownSamplerFromIndex {
 	taxIDGetter taxGetter = new taxIDGetter();
-	public void process(String pathToIndex) {
-		taxGetter.process();
+	ArrayList<DatabaseEntry>  entriesToRemove = new ArrayList<DatabaseEntry>();
+	DatabaseEntryComparator comp = new  DatabaseEntryComparator();
+	public ArrayList<DatabaseEntry> getEntriesToRemvoe(){
+		return entriesToRemove;
+	}
+ 	public void process(String pathToIndex) {
+		taxGetter.processNCBIZipFile();;
 		HashMap<Integer,HashMap<Integer,DatabaseEntry>> entries = loadDatabaseIndex(pathToIndex);
 		for(Integer key: entries.keySet()) {
-			System.out.println(taxGetter.getNcbiIdToNameMap().get(key)+"\t"+entries.get(key).size());
+			if(entries.get(key).size()>=100) {
+				ArrayList<DatabaseEntry> entriesToDownSample = new ArrayList<DatabaseEntry>();
+				entriesToDownSample.addAll(entries.get(key).values());
+				entriesToDownSample.sort(comp);	
+				entriesToRemove.addAll(entriesToDownSample.subList(25, entriesToDownSample.size()-1));	
+				System.out.println(taxGetter.getNcbiIdToNameMap().get(key)+"\t"+entries.get(key).size());
+			}
+			
 //			for(DatabaseEntry e: entries.get(key))
 //    			System.out.println(e.getIndexLine());
 		}
