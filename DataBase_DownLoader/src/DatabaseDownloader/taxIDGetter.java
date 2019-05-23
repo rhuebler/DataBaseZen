@@ -7,6 +7,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.URL;
 import java.net.URLConnection;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
@@ -62,8 +63,8 @@ public class taxIDGetter {
 	}
 	public void processNCBIZipFile() {
 		HashMap<Integer,String> nameToID = new HashMap<Integer,String>();
-		String location = "ftp://ftp.ncbi.nih.gov/pub/taxonomy/taxdmp.zip";
-		try{
+        HashMap<Integer,ArrayList<String>> IDsToNames = new HashMap<Integer,ArrayList<String>>();
+        try{
 			byte[] array = null;
 			URLConnection conn = new URL(location).openConnection();
 			 conn.setConnectTimeout(90*1000);
@@ -92,21 +93,28 @@ public class taxIDGetter {
 				 for(String line:lines.split("\\n")) {
 					String[] parts = line.split("\\t");
 					//System.out.println(parts[0]+"\t"+parts[2]);
-					if(!nameToID.containsKey(Integer.parseInt(parts[0])))
-						nameToID.put(Integer.parseInt(parts[0]), parts[2]);
+					if(!IDsToNames.containsKey(Integer.parseInt(parts[0]))) {
+						ArrayList<String> entries = new ArrayList<String>();
+						entries.add(parts[2]);
+						IDsToNames.put(Integer.parseInt(parts[0]), entries);
+					}	
 					else {
-						if(nameToID.get(Integer.parseInt(parts[0])).length()<parts[2].length()) {
-							nameToID.replace(Integer.parseInt(parts[0]), parts[2]);
-						}
+						ArrayList<String> entries = IDsToNames.get(Integer.parseInt(parts[0]));
+						entries.add(parts[2]);
+						IDsToNames.replace(Integer.parseInt(parts[0]),entries);
 					}
-					
 				 }
-				 ncbiIdToName = nameToID;
+				 
+				for(int ID : IDsToNames.keySet()) {
+					nameToID.put(ID, IDsToNames.get(ID).get(0));
+				}
+				ncbiIdToName = nameToID;
 			   }catch(Exception e) {
 				   e.printStackTrace();
 			    }
 		}catch(IOException io) {
 			io.printStackTrace();
 		}
-	}
+	}	
+	
 }

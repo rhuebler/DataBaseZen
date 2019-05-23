@@ -43,8 +43,8 @@ public class Database_DownLoader {
 				case UPDATE:{
 					DatabaseProcessor processor = new DatabaseProcessor(inProcessor);
 					processor.process();
-					//processor.updateDatabase();
-					processor.downsample();
+					processor.updateDatabase();
+					//processor.downsample();
 					break;
 					}	
 			}
