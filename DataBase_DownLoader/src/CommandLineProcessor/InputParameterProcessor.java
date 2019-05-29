@@ -172,7 +172,7 @@ public class InputParameterProcessor {
 		input+="\n--dustWindow	"+dustWindow;
 		input+="\n--dustLinker	"+dustLinker;
 		input+="\n--index	"+pathToIndex;
-		input+="\n--length	"+pathToIndex;
+		input+="\n--length	"+lengthTreshold;
 		return input;
 	}
 	private void process(String[] parameters) throws IOException, ParseException{	

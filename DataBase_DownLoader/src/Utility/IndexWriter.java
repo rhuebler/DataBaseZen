@@ -35,7 +35,7 @@ public class IndexWriter {
 		 try ( BufferedWriter br  = new BufferedWriter( new FileWriter(new File(output+"index.txt"),true)))
 		 	{		if(entries.size()>0) {
 		 			for(DatabaseEntry entry : entries) {	
-		 				System.out.println(entry.getIndexLine());
+		 			//	System.out.println(entry.getIndexLine());
 		 				br.write(entry.getIndexLine());
 		 				br.newLine();
 		 			}
@@ -47,7 +47,7 @@ public class IndexWriter {
 	
 	public void appendEntryToDatabaseIndex(DatabaseEntry entry) {
 		 try ( BufferedWriter br  = new BufferedWriter( new FileWriter(new File(output+"index.txt"),true)))
-		 	{		System.out.println(entry.getIndexLine());
+		 	{		//System.out.println(entry.getIndexLine());
 		 			br.write(entry.getIndexLine());
 		 			br.newLine();	
 	        }catch(IOException io) {

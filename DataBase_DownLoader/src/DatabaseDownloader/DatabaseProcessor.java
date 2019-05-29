@@ -159,11 +159,16 @@ public class DatabaseProcessor {
 		loader.setLengthThreshold(length);
 		writer.setOutput(output);
 		writer.initializeDatabaseIndex();
+		System.out.println("Downloading Entries");
+		int i=0;
 		for(DatabaseEntry entry : getEntries()) {
 			try{
 				boolean result = loader.download(entry);
 				if(result)
 					writer.appendEntryToDatabaseIndex(entry);
+				if(((Math.round(i/ getEntries().size())*100) % 10)==0)
+					System.out.println((Math.round(i/ getEntries().size())*100) +" done");
+				i++;
 			}catch(Exception e) {
 				e.printStackTrace();
 			}
@@ -180,11 +185,15 @@ public class DatabaseProcessor {
 		EntryLoader loader = new EntryLoader() ;
 		loader.setCleanDB(cleanDatabase);
 		System.out.println("Downloading Entries");
+		int i=0;
 		for(DatabaseEntry entry : entriesToUpdate) {
 			try{
 				boolean result = loader.download(entry);
 				if(result)
 					writer.appendEntryToDatabaseIndex(entry);
+				if(((Math.round(i/entriesToUpdate.size())*100) % 10)==0)
+					System.out.println((Math.round(i/entriesToUpdate.size())*100) +" done");
+				i++;
 			}catch(Exception e) {
 				e.printStackTrace();
 			}
@@ -291,18 +300,17 @@ public class DatabaseProcessor {
 		writer.setOutput(output);
 		writer.initializeDatabaseIndex();
 		writer.appendEntriesToDatabaseIndex(currentEntries);
+		System.out.println(currentEntries.size()+" written to Index");
 		if(!entriesToUpdate.isEmpty()) {
-			System.out.println("Updating database");
+			System.out.println("Updating database loading "+entriesToUpdate.size()+" entries");
+			loadDatabase(entriesToUpdate);
 			if(cleanDatabase) {
-				System.out.println("Cleaning database");
-				loadDatabase(entriesToUpdate);
 				//recreate index after cleaning database
 				writer.initializeDatabaseIndex();
 				writer.writeDatabaseIndex(currentEntries);
+				System.out.println("Cleaning database");
 				cleanDatabase();
 				writer.appendEntriesToDatabaseIndex(references);
-			}else {
-				loadDatabase(entriesToUpdate);
 			}
 		}else {
 			System.out.println("Database up to date under current parameters");
