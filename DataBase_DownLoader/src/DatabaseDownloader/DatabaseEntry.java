@@ -171,16 +171,12 @@ public class DatabaseEntry {
 		this.taxID = taxID;
 	}
 	public String getIndexLine() {
-		if(cleanDB)
-			return getCleanedIndexLine();
-		else {
 			if(time!=null)
 				return name +"\t"+taxID+"\t"+speciesTaxID+"\t"+assembly_level+"\t"+seq_rel_date+"\t"+asm_name+"\t"+getOutFile()+"\t"+time+"\t"+totalContigs+"\t"+keptContigs+"\t"+(totalContigs-keptContigs);
 			else	
 				return name +"\t"+taxID+"\t"+speciesTaxID+"\t"+assembly_level+"\t"+seq_rel_date+"\t"+asm_name+"\t"+getOutFile()+"\t"+ZonedDateTime.now()+"\t"+totalContigs+"\t"+keptContigs+"\t"+(totalContigs-keptContigs);
-		}
 	}
-	private String getCleanedIndexLine() {
+	public String getCleanedIndexLine() {
 		if(time!=null)
 			return name +"\t"+taxID+"\t"+speciesTaxID+"\t"+assembly_level+"\t"+seq_rel_date+"\t"+asm_name+"\t"+getFilteredFile()+"\t"+time+"\t"+totalContigs+"\t"+keptContigs+"\t"+(totalContigs-keptContigs);
 		else	

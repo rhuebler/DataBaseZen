@@ -44,7 +44,19 @@ public class IndexWriter {
 				io.printStackTrace();
 		}
 }
-	
+	public void appendCleanEntriesToDatabaseIndex(ArrayList<DatabaseEntry> entries) {
+		 try ( BufferedWriter br  = new BufferedWriter( new FileWriter(new File(output+"index.txt"),true)))
+		 	{		if(entries.size()>0) {
+		 			for(DatabaseEntry entry : entries) {	
+		 			//	System.out.println(entry.getIndexLine());
+		 				br.write(entry.getCleanedIndexLine());
+		 				br.newLine();
+		 			}
+		 		}
+	        }catch(IOException io) {
+				io.printStackTrace();
+		}
+}
 	public void appendEntryToDatabaseIndex(DatabaseEntry entry) {
 		 try ( BufferedWriter br  = new BufferedWriter( new FileWriter(new File(output+"index.txt"),true)))
 		 	{		//System.out.println(entry.getIndexLine());
@@ -86,6 +98,22 @@ public class IndexWriter {
 				br.newLine();
 				 for(DatabaseEntry entry : entriesToIndex) {
 						br.write(entry.getIndexLine());
+						br.newLine();
+				 }
+		        }catch(IOException io) {
+					io.printStackTrace();
+				}
+			}
+		}
+	
+	public void writeCleanDatabaseIndex(ArrayList<DatabaseEntry> entriesToIndex) {
+		if(!entriesToIndex.isEmpty()) {
+			 try ( BufferedWriter br  = new BufferedWriter( new FileWriter(new File(output+"index.txt"),false)))
+			 {
+				br.write(header);
+				br.newLine();
+				 for(DatabaseEntry entry : entriesToIndex) {
+						br.write(entry.getCleanedIndexLine());
 						br.newLine();
 				 }
 		        }catch(IOException io) {

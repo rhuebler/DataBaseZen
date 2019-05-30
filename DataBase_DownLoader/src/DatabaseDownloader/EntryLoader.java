@@ -9,7 +9,6 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.Reader;
 import java.io.Writer;
-import java.net.URI;
 import java.net.URL;
 import java.net.URLConnection;
 import java.nio.file.CopyOption;
@@ -17,8 +16,13 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
+
 public class EntryLoader {
 	/**
 	 * This class is used to download genomes from NCBI. It's subfunctions return true if the download was successfull
@@ -28,7 +32,16 @@ public class EntryLoader {
 	private boolean contigLengthFiltering = true;
 	private int lengthThreshold = 100000;
 	private boolean cleanDB = false;
+	private ThreadPoolExecutor executor;
+	private int numThreads=4;
 	private ArrayList<DatabaseEntry> failedReferences = new ArrayList<DatabaseEntry>();
+	private ArrayList<Future<DownLoader>> results = new ArrayList<Future<DownLoader>>();
+	public void destroy(){
+		executor.shutdown();
+	}
+	public void intiliazeExecutor(){
+		executor=(ThreadPoolExecutor) Executors.newFixedThreadPool(numThreads);
+	}
 	public void setCleanDB(boolean b) {
 		cleanDB =b;
 	}
@@ -142,6 +155,51 @@ public class EntryLoader {
 		   result = downLoadCompleteReference(entry);
 		}
 		return result;
+	}
+	
+	public void downloadConcurrently(DatabaseEntry entry) throws Exception {
+		String url = entry.getLink();
+		if(url.contains("material_genomic")) {
+			System.err.println(url);
+		}
+		if( contigLengthFiltering == true) {
+			switch(entry.getAssembly_level()) {
+				case COMPLETE:{
+					ConcurrentDownloader task = new ConcurrentDownloader(entry);
+					Future<DownLoader> future=executor.submit(task);
+					results.add(future);
+					break;
+					}
+				default:{
+					ConcurrentDownloader task = new ConcurrentDownloader(entry,lengthThreshold);
+					Future<DownLoader> future=executor.submit(task);
+					results.add(future);
+				}
+				break;	
+			}
+		}else {
+			ConcurrentDownloader task = new ConcurrentDownloader(entry);
+			Future<DownLoader> future=executor.submit(task);
+			results.add(future);
+		}
+		
+	}
+	public void getResults() {
+		for(Future<DownLoader> future: results) {
+			DownLoader loader;
+			try {
+				loader = future.get();
+				if(loader.getResult()) {
+					references.add(loader.getEntry());
+				}	else {
+					failedReferences.add(loader.getEntry());
+				}	
+			} catch (InterruptedException | ExecutionException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			
+		}
 	}
 	public ArrayList<DatabaseEntry> getDownLoadedReferences(){
 		return references;

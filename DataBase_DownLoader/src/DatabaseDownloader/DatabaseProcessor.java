@@ -31,6 +31,7 @@ public class DatabaseProcessor {
 	private boolean keywordFiltering = true;
 	private String pathToIndex="";
 	private int length;
+	private int threads;
 	private IndexWriter writer = new IndexWriter();
 	public  ArrayList<DatabaseEntry> getReferences() {
 		return references;
@@ -57,6 +58,7 @@ public class DatabaseProcessor {
 			System.err.println("Provide either Phylum or Taxon List. Shutting Down!");
 			System.exit(1);
 		}
+		threads = inProcessor.getNumberOfThreads();
 		reference = inProcessor.getRepresentativeGenomes();
 		cleanDatabase = inProcessor.iscleanDB();
 		if(cleanDatabase) {
@@ -173,11 +175,86 @@ public class DatabaseProcessor {
 				e.printStackTrace();
 			}
 		}
+		if(loader.getFailedReferences().size()>0) {
+			ArrayList<DatabaseEntry> list = loader.getFailedReferences();
+			loader.clearFailedReferences();
+			for(DatabaseEntry entry : list) {
+				try{
+					boolean result = loader.download(entry);
+					if(result)
+						writer.appendEntryToDatabaseIndex(entry);
+				}catch(Exception e) {
+					e.printStackTrace();
+				}
+			}
+		}
+		if(loader.getFailedReferences().size()>0) {
+			writer.writeFailedEntires(loader.getFailedReferences());
+		}
 		if(cleanDatabase) {
 			cleanDatabase(); 
-			writer.writeDatabaseIndex(loader.getDownLoadedReferences());
+			writer.writeCleanDatabaseIndex(loader.getDownLoadedReferences());
 		}
 		references = loader.getDownLoadedReferences();
+	}
+	
+	public void loadDatabaseConcurrently() {
+		new File(output).mkdir();
+		EntryLoader loader = new EntryLoader() ;
+		loader.setCleanDB(cleanDatabase);
+		loader.setLengthThreshold(length);
+		loader.intiliazeExecutor();
+		writer.setOutput(output);
+		writer.initializeDatabaseIndex();
+		System.out.println("Downloading Entries");
+		int i=0;
+		for(DatabaseEntry entry : getEntries()) {
+			try{
+				boolean result = loader.download(entry);
+				if(result)
+					writer.appendEntryToDatabaseIndex(entry);
+				if(((Math.round(i/ getEntries().size())*100) % 10)==0)
+					System.out.println((Math.round(i/ getEntries().size())*100) +" done");
+				i++;
+			}catch(Exception e) {
+				e.printStackTrace();
+			}
+		}
+		loader.destroy();
+		loader.getResults();
+		
+		writer.appendEntriesToDatabaseIndex(loader.getDownLoadedReferences());
+		
+		//if we fail to download something we collect those entries and try again at the end
+		if(loader.getFailedReferences().size()>0) {
+			i=0;
+			loader.intiliazeExecutor();
+			ArrayList<DatabaseEntry> list = loader.getFailedReferences();
+			loader.clearFailedReferences();
+			for(DatabaseEntry entry : list) {
+				try{
+					loader.downloadConcurrently(entry);
+					if((((i*100)/list.size()) % 10)==0)
+						System.out.println(((i*100)/list.size()) +" done");
+					i++;
+				}catch(Exception e) {
+					e.printStackTrace();
+				}
+			}
+			loader.destroy();
+			loader.getResults();
+			writer.appendEntriesToDatabaseIndex(loader.getDownLoadedReferences());
+		}
+		// if we still fail to download them we write an extra index containing them
+		if(loader.getFailedReferences().size()>0) {
+			writer.writeFailedEntires(loader.getFailedReferences());
+		}
+		references = loader.getDownLoadedReferences();	
+		if(cleanDatabase) {
+			cleanDatabase(); 
+			writer.writeCleanDatabaseIndex(loader.getDownLoadedReferences());
+			references = loader.getDownLoadedReferences();	
+		}
 	}
 	
 	public void loadDatabase(ArrayList<DatabaseEntry> entriesToUpdate) {
@@ -191,15 +268,13 @@ public class DatabaseProcessor {
 				boolean result = loader.download(entry);
 				if(result)
 					writer.appendEntryToDatabaseIndex(entry);
-				if(((Math.round(i/entriesToUpdate.size())*100) % 10)==0)
-					System.out.println((Math.round(i/entriesToUpdate.size())*100) +" done");
+				if((((i*100)/entriesToUpdate.size()) % 10)==0)
+					System.out.println(((i*100)/entriesToUpdate.size()) +" done");
 				i++;
 			}catch(Exception e) {
 				e.printStackTrace();
 			}
 		}
-		
-		//if we fail to download something we collect those entries and try again at the end
 		if(loader.getFailedReferences().size()>0) {
 			ArrayList<DatabaseEntry> list = loader.getFailedReferences();
 			loader.clearFailedReferences();
@@ -212,6 +287,53 @@ public class DatabaseProcessor {
 					e.printStackTrace();
 				}
 			}
+		}
+		if(loader.getFailedReferences().size()>0) {
+			writer.writeFailedEntires(loader.getFailedReferences());
+		}
+		
+		
+	}
+		public void loadDatabaseConcurrently(ArrayList<DatabaseEntry> entriesToUpdate) {
+			new File(output).mkdir();
+			EntryLoader loader = new EntryLoader() ;
+			loader.setCleanDB(cleanDatabase);
+			loader.intiliazeExecutor();
+			System.out.println("Downloading Entries");
+			int i=0;
+			for(DatabaseEntry entry : entriesToUpdate) {
+				try{
+					loader.downloadConcurrently(entry);
+					if((((i*100)/entriesToUpdate.size()) % 10)==0)
+						System.out.println(((i*100)/entriesToUpdate.size()) +" done");
+					i++;
+				}catch(Exception e) {
+					e.printStackTrace();
+				}
+			}
+			loader.destroy();
+			loader.getResults();
+			writer.appendEntriesToDatabaseIndex(loader.getDownLoadedReferences());
+		
+		//if we fail to download something we collect those entries and try again at the end
+		if(loader.getFailedReferences().size()>0) {
+			i=0;
+			loader.intiliazeExecutor();
+			ArrayList<DatabaseEntry> list = loader.getFailedReferences();
+			loader.clearFailedReferences();
+			for(DatabaseEntry entry : list) {
+				try{
+					loader.downloadConcurrently(entry);
+					if((((i*100)/list.size()) % 10)==0)
+						System.out.println(((i*100)/list.size()) +" done");
+					i++;
+				}catch(Exception e) {
+					e.printStackTrace();
+				}
+			}
+			loader.destroy();
+			loader.getResults();
+			writer.appendEntriesToDatabaseIndex(loader.getDownLoadedReferences());
 		}
 		// if we still fail to download them we write an extra index containing them
 		if(loader.getFailedReferences().size()>0) {
@@ -303,14 +425,18 @@ public class DatabaseProcessor {
 		System.out.println(currentEntries.size()+" written to Index");
 		if(!entriesToUpdate.isEmpty()) {
 			System.out.println("Updating database loading "+entriesToUpdate.size()+" entries");
-			loadDatabase(entriesToUpdate);
+			if(threads>1) {
+				loadDatabaseConcurrently(entriesToUpdate);
+			}else {
+				loadDatabase(entriesToUpdate);
+			}
 			if(cleanDatabase) {
 				//recreate index after cleaning database
 				writer.initializeDatabaseIndex();
 				writer.writeDatabaseIndex(currentEntries);
 				System.out.println("Cleaning database");
 				cleanDatabase();
-				writer.appendEntriesToDatabaseIndex(references);
+				writer.appendCleanEntriesToDatabaseIndex(references);
 			}
 		}else {
 			System.out.println("Database up to date under current parameters");
