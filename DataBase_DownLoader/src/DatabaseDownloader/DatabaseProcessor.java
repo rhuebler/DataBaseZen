@@ -27,12 +27,13 @@ public class DatabaseProcessor {
 	private String output="";
 	private ArrayList<DatabaseEntry> references;
 	private boolean cleanDatabase;
-	private ArrayList<String> dustCommand;
 	private boolean keywordFiltering = true;
 	private String pathToIndex="";
 	private int length;
 	private int threads;
 	private IndexWriter writer = new IndexWriter();
+	private boolean contaminatedRemoval = false;
+	private ArrayList<String> humanContaminatedAssemblies =  new  ArrayList<String>();
 	public  ArrayList<DatabaseEntry> getReferences() {
 		return references;
 	}
@@ -61,22 +62,16 @@ public class DatabaseProcessor {
 		threads = inProcessor.getNumberOfThreads();
 		reference = inProcessor.getRepresentativeGenomes();
 		cleanDatabase = inProcessor.iscleanDB();
-		if(cleanDatabase) {
-			ArrayList<String> command  = new ArrayList<String>();
-			command.add("gzcat") ;
-			command.add("placeholder");command.add("|");
-			command.add("dustmasker");
-			command.add("-in");command.add("-");
-			command.add("-out");command.add("placeholder");
-			command.add("-window");command.add(""+inProcessor.getDustWindow());
-			command.add("-level");command.add(""+inProcessor.getDustLevel());
-			command.add("-infmt");command.add(inProcessor.getDustFormat());
-			command.add("-outfmt");command.add("fasta");
-			command.add("-linker"); command.add(""+inProcessor.getDustLinker());
-		}
+		
 		pathToIndex = inProcessor.getPathToIndex();
 		length = inProcessor.getLengthTreshold();
 		keywordFiltering = inProcessor.isKeywordRemoval();
+		contaminatedRemoval = inProcessor.isRemoveHumanContaminated();
+		if(contaminatedRemoval) {
+			ReadContaminationXLSX readContamination = new ReadContaminationXLSX(inProcessor.getPathToXLSXFiles());
+			readContamination.process();
+			humanContaminatedAssemblies = readContamination.getAssemblyIDs();
+		}
 	}
 	
 	public void process() {
@@ -104,6 +99,7 @@ public class DatabaseProcessor {
 				fileName = "ftp://ftp.ncbi.nlm.nih.gov/genomes/refseq/bacteria/assembly_summary.txt";
 				break;
 			}
+			
 		}
 		new File(output).mkdir();
 		switch(sequenceState) {
@@ -149,7 +145,11 @@ public class DatabaseProcessor {
 			getter = new IndexGetter(fileName, keyword, output, rep,keywordFiltering );
 		}
 		System.out.println("Reading NCBI Index file");
+	
 		getter.process();
+		if(contaminatedRemoval) {
+			getter.removeHumanContaminatedAssemblies(humanContaminatedAssemblies);
+		}
 	}
 	public ArrayList<DatabaseEntry> getEntries(){
 		return getter.getDatabaseEntries();
@@ -191,10 +191,10 @@ public class DatabaseProcessor {
 		if(loader.getFailedReferences().size()>0) {
 			writer.writeFailedEntires(loader.getFailedReferences());
 		}
-		if(cleanDatabase) {
-			cleanDatabase(); 
-			writer.writeCleanDatabaseIndex(loader.getDownLoadedReferences());
-		}
+//		if(cleanDatabase) {
+//			cleanDatabase(); 
+//			writer.writeCleanDatabaseIndex(loader.getDownLoadedReferences());
+//		}
 		references = loader.getDownLoadedReferences();
 	}
 	
@@ -250,11 +250,6 @@ public class DatabaseProcessor {
 			writer.writeFailedEntires(loader.getFailedReferences());
 		}
 		references = loader.getDownLoadedReferences();	
-		if(cleanDatabase) {
-			cleanDatabase(); 
-			writer.writeCleanDatabaseIndex(loader.getDownLoadedReferences());
-			references = loader.getDownLoadedReferences();	
-		}
 	}
 	
 	public void loadDatabase(ArrayList<DatabaseEntry> entriesToUpdate) {
@@ -343,19 +338,7 @@ public class DatabaseProcessor {
 	}
 	
 	
-	private void cleanDatabase() {
-		ArrayList<String>command = new ArrayList<String>();
-		command.add("rm");
-		command.add("placeholder");
-		ProcessExecutor executor = new ProcessExecutor();
-		for(DatabaseEntry entry : references) {
-			dustCommand.set(2, entry.getOutFile()); //change input to inputfile is index 2
-			dustCommand.set(4, entry.getFilteredFile()); //change output to outputfile is index 4
-			executor.run(dustCommand);
-			command.set(1, entry.getFilteredFile());
-			executor.run(command);
-		}
-	}	
+	
 
 	private ArrayList<DatabaseEntry> loadDatabaseIndex(String pathToIndex){
 		ArrayList<DatabaseEntry> indexEntries= new ArrayList<DatabaseEntry>();
@@ -387,11 +370,6 @@ public class DatabaseProcessor {
 		DownSamplerFromIndex downSampler = new DownSamplerFromIndex();
 		downSampler.process(pathToIndex);
 		ArrayList<DatabaseEntry> entriesToRemove = downSampler.getEntriesToRemvoe();
-		
-		
-		
-		
-		
 		//Here we update our DB Index
 		ArrayList<DatabaseEntry> allEntries = loadDatabaseIndex(pathToIndex);
 		allEntries.removeAll(entriesToRemove);
@@ -429,14 +407,6 @@ public class DatabaseProcessor {
 				loadDatabaseConcurrently(entriesToUpdate);
 			}else {
 				loadDatabase(entriesToUpdate);
-			}
-			if(cleanDatabase) {
-				//recreate index after cleaning database
-				writer.initializeDatabaseIndex();
-				writer.writeDatabaseIndex(currentEntries);
-				System.out.println("Cleaning database");
-				cleanDatabase();
-				writer.appendCleanEntriesToDatabaseIndex(references);
 			}
 		}else {
 			System.out.println("Database up to date under current parameters");

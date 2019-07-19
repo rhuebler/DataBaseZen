@@ -60,8 +60,16 @@ public class InputParameterProcessor {
 	private int dustWindow = 64;
 	private int dustLinker = 1 ;
 	private int lengthTreshold = 100000;
+	private boolean ignoreHumanAssemblies =false;
+	private String pathToXLSX = "/Users/huebler/Desktop/Breitwieser_2019_GenomeRes_RefSeqHumanContaminationContigs/Supplemental_Table_S2.xlsx";
 	//cite [1] Morgulis A, Gertz EM, Schaffer AA, Agarwala R. A Fast and Symmetric DUST Implementation to Mask Low-Complexity DNA Sequences. for dustMasker part
 	// constructor
+	public String getPathToXLSXFiles() {
+		return pathToXLSX;
+	}
+	public boolean isRemoveHumanContaminated() {
+		return ignoreHumanAssemblies;
+	}
 	public String getDustFormat() {
 		return dustFormat;
 	}
@@ -173,6 +181,10 @@ public class InputParameterProcessor {
 		input+="\n--dustLinker	"+dustLinker;
 		input+="\n--index	"+pathToIndex;
 		input+="\n--length	"+lengthTreshold;
+		if(ignoreHumanAssemblies)
+			input+="\n--contaminatedremoval";
+		if(keywordRemoval)
+			input+="\n--keywordRemoval";
 		return input;
 	}
 	private void process(String[] parameters) throws IOException, ParseException{	
@@ -201,6 +213,7 @@ public class InputParameterProcessor {
     	    Option optionPathToIndex = Option.builder("i").longOpt("index").hasArg().optionalArg(true).desc("Set the path to index to update an index").build();
     	    Option optionLengthThreshold = Option.builder("l").longOpt("length").hasArg().optionalArg(true).desc("Set length threshold for assemblies exclude parts of assemblies that are shorter").build();
     	    Option optionKeywordRemoval = Option.builder("k").longOpt("keywordremoval").optionalArg(true).desc("Key word removal, exclude entries that contain uncultured, co-culture species, synthetic").build();
+    	    Option optionIngoreContaminatedAssemblies = Option.builder("c").longOpt("contaminatedremoval").optionalArg(true).desc("Remove human contaminated reference sequences").build();
     	    Options options = new Options();
     	    
     	    // add all parameters to the parser
@@ -227,6 +240,7 @@ public class InputParameterProcessor {
     	    options.addOption(optionPathToIndex);
     	    options.addOption(optionLengthThreshold);
     	    options.addOption(optionKeywordRemoval);
+    	    options.addOption(optionIngoreContaminatedAssemblies);
     	    //parse arguments into the comandline parser
     	        commandLine = parser.parse(options, parameters);
  
@@ -365,6 +379,10 @@ public class InputParameterProcessor {
     	        			   String length = commandLine.getOptionValue("length");
     	        			  lengthTreshold = Integer.parseInt(length);
     	        		   }
+    	        		   if(commandLine.hasOption("contaminatedremoval")) {
+    	        			   ignoreHumanAssemblies = true;
+    	        		   }
+    	        			   
     	        		break;
     	        		}
     	        	case DOWNLOAD:{
@@ -416,6 +434,9 @@ public class InputParameterProcessor {
 							System.exit(1);
 	        			   }
 	        		   }   
+	        		  if(commandLine.hasOption("contaminatedremoval")) {
+	        			   ignoreHumanAssemblies = true;
+	        		  }
 	        		break;
 	        		}
     	        	case CREATE:{

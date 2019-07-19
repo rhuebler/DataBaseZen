@@ -20,6 +20,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
@@ -38,6 +39,12 @@ public class EntryLoader {
 	private ArrayList<Future<DownLoader>> results = new ArrayList<Future<DownLoader>>();
 	public void destroy(){
 		executor.shutdown();
+		try {
+			executor.awaitTermination(10, TimeUnit.SECONDS);
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 	public void intiliazeExecutor(){
 		executor=(ThreadPoolExecutor) Executors.newFixedThreadPool(numThreads);

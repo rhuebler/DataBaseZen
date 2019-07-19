@@ -1,5 +1,6 @@
 package DatabaseDownloader;
 
+import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -18,7 +19,7 @@ import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
-
+// ADD ascp support
 public class DownLoader {
 	boolean result = false;
 	DatabaseEntry entry;
@@ -100,7 +101,8 @@ public class DownLoader {
 			}	
 			if(output.size()>0) {
 			 try (   FileOutputStream outputStream = new FileOutputStream(fileName, false);
-		                Writer writer = new OutputStreamWriter(new GZIPOutputStream(outputStream), "UTF-8")) {
+					 BufferedOutputStream buffered =  new BufferedOutputStream(outputStream);
+		             Writer writer = new OutputStreamWriter(new GZIPOutputStream(buffered), "UTF-8")) {
 				 for(String s : output) {
 		            writer.write(s);
 				 }

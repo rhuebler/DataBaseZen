@@ -25,6 +25,16 @@ public class IndexGetter {
 	private String rep;
 	private boolean keywordRemoval;
 	private ArrayList<DatabaseEntry> entries = new ArrayList<DatabaseEntry>();
+	public void removeHumanContaminatedAssemblies(ArrayList<String> contamiantedReferences) {
+		ArrayList<DatabaseEntry> contained = new ArrayList<DatabaseEntry>();
+		for(DatabaseEntry entry :getDatabaseEntries() ) {
+			if(contamiantedReferences.contains(entry.getAsm_name())) {
+				 contained.add(entry);
+			}
+		}
+		if(contained.size()>0)
+			entries.removeAll(contained);
+	}
 	public ArrayList<DatabaseEntry> getDatabaseEntries(){
 		return entries;
 	}
