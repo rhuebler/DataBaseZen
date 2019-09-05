@@ -4,6 +4,7 @@ import org.apache.commons.cli.ParseException;
 
 import ArtificalReadGenerator.ArtificalDataControler;
 import CommandLineProcessor.InputParameterProcessor;
+import DataBase_Cleaner.DataBaseCleanerProcessor;
 import DatabaseDownloader.DatabaseProcessor;
 
 public class Database_DownLoader {
@@ -24,6 +25,10 @@ public class Database_DownLoader {
 					DatabaseProcessor processor = new DatabaseProcessor(inProcessor);
 					processor.process();
 					processor.loadDatabase();
+					if(inProcessor.iscleanDB()) {
+						DataBaseCleanerProcessor cleaner = new DataBaseCleanerProcessor(inProcessor);
+						cleaner.cleanDatabase();
+					}
 					ArtificalDataControler controler = new ArtificalDataControler(inProcessor, processor.getReferences());
 					controler.process();
 					break;
@@ -32,19 +37,21 @@ public class Database_DownLoader {
 					DatabaseProcessor processor = new DatabaseProcessor(inProcessor);
 					processor.process();
 					processor.loadDatabase();
+					if(inProcessor.iscleanDB()) {
+						DataBaseCleanerProcessor cleaner = new DataBaseCleanerProcessor(inProcessor);
+						cleaner.cleanDatabase();
+					}
 					break;
 					}
 				case CREATE:{
 					ArtificalDataControler controler = new ArtificalDataControler(inProcessor);
 					controler.process();
-					//System.err.println("Currently not implemented!");
 					break;
 					}
 				case UPDATE:{
 					DatabaseProcessor processor = new DatabaseProcessor(inProcessor);
 					processor.process();
 					processor.updateDatabase();
-					//processor.downsample();
 					break;
 					}	
 			}

@@ -11,7 +11,11 @@ import java.util.ArrayList;
 /**
  *  the purpose of this class is to open and process the summary files from NCBI then store those entries as DatabaseEntry objects
  * @author huebler
- *
+ * MTB pestis, S enterica 
+ * align against dustmasked things
+ * do all contigs belong to the same species  do all contigs belong to the same taxonomic path 
+ * reads literature how many reads connot be placed underneath the genus 
+ * 
  */
 
 
@@ -110,7 +114,7 @@ public class IndexGetter {
 				while ((line = in.readLine()) != null) {
 					if(!line.toString().startsWith("#") && !line.toString().contains("material_genomic")) {//ignore comments
 						if(keywordRemoval == true) {
-							if(!line.contains("uncultured") && !line.contains("co-culture species") && !line.contains("synthetic")){
+							if(!line.contains("uncultured") && !line.contains("co-culture species") && !line.contains("synthetic")&& !line.contains("unknown source")){
 								processLine(line);
 							}
 						}else{

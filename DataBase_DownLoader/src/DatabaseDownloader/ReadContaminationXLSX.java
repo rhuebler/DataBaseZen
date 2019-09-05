@@ -1,13 +1,15 @@
 package DatabaseDownloader;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.URL;
+import java.net.URLConnection;
 import java.util.ArrayList;
 import java.util.Iterator;
-
-import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
 
 import org.apache.poi.xssf.usermodel.XSSFSheet;
@@ -41,11 +43,19 @@ public class ReadContaminationXLSX {
 			}
 		}else {
 			System.err.println("No XSLX File present try to download");
-//			if() {
-//				
-//			}else {
-//				
-//			}
+			String url = "https://raw.githubusercontent.com/rhuebler/DatabaseDownloader/master/AssemblyNames.txt";
+			try{
+				URLConnection conn = new URL(url).openConnection();
+				conn.setConnectTimeout(30*1000);
+				conn.setReadTimeout(90*1000);
+				try (BufferedReader buffIn = new BufferedReader(new InputStreamReader(conn.getInputStream()))) {
+					assemblyIDs.add(buffIn.readLine());
+				}catch(IOException io) {
+					io.printStackTrace();
+				}
+			}catch(IOException io) {
+				io.printStackTrace();
+			}
 		}
 	}
 	public  ArrayList<String> getAssemblyIDs() {
@@ -53,3 +63,13 @@ public class ReadContaminationXLSX {
 	}
 
 }
+/**
+are likely to form relatively small contigs.
+Consistent with this expectation, we found that 99.7% of
+contaminated contigs and scaffolds are shorter than 10 kbp,
+99.3% are below5 kbp, and 92% are below 1 kbp (Fig. 2A). The median
+We selected 219 high-quality samples for further analysis,
+choosing those with at least 20× coverage (see Supplemental
+Fig. S4), and found that contaminated scaffolds had significantly
+lower coverage than the genome-wide average (Fig. 2B, red box).
+*/

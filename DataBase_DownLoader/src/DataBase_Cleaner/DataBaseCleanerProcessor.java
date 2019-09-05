@@ -6,24 +6,29 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.ThreadPoolExecutor;
 
 import CommandLineProcessor.InputParameterProcessor;
+import DatabaseDownloader.ConcurrentDownloader;
 import DatabaseDownloader.DatabaseEntry;
+import DatabaseDownloader.DownLoader;
 import Utility.IndexWriter;
 import Utility.ProcessExecutor;
 
 public class DataBaseCleanerProcessor {
 	String pathToIndex;
-	private int length;
 	private int threads;
 	private ArrayList<String> dustCommand;
 	private IndexWriter writer = new IndexWriter();
 	private ArrayList<DatabaseEntry> entries;
+	private ThreadPoolExecutor executor;
 	String output;
 	public DataBaseCleanerProcessor(InputParameterProcessor inProcessor){
 		output = inProcessor.getOutDir();
 		pathToIndex = inProcessor.getPathToIndex();
-		length  = inProcessor.getLengthTreshold();
 		threads = inProcessor.getNumberOfThreads();
 		ArrayList<String> command  = new ArrayList<String>();
 		command.add("gzcat") ;
@@ -37,6 +42,32 @@ public class DataBaseCleanerProcessor {
 		command.add("-outfmt");command.add("fasta");
 		command.add("-linker"); command.add(""+inProcessor.getDustLinker());
 		dustCommand = command;
+	}
+	private void getAdapterContaminatedSequences() {
+		executor=(ThreadPoolExecutor) Executors.newFixedThreadPool(threads);
+		ArrayList<Future<AdapterSpotter>> futureList = new ArrayList<Future<AdapterSpotter>>();
+		for(DatabaseEntry entry : entries) {
+			ConcurrentAdapterSpotter task = new ConcurrentAdapterSpotter(entry);
+			Future<AdapterSpotter> future = executor.submit(task);
+			futureList.add(future);
+		}
+		executor.shutdown();
+		ArrayList<DatabaseEntry> entriesToRemove = new ArrayList<DatabaseEntry>();
+		for (Future<AdapterSpotter> futureSpotter: futureList) {
+			try{
+			AdapterSpotter spotter = futureSpotter.get();
+			if(!spotter.isClean()) {
+				entriesToRemove.add(spotter.getEntry());
+				File file = new File(spotter.getEntry().getOutFile());
+				file.delete();
+			}
+			}catch(InterruptedException iEx) {
+				iEx.printStackTrace();
+			}catch(ExecutionException eEx) {
+				eEx.printStackTrace();
+			}
+			entries.removeAll(entriesToRemove);
+		}
 	}
 	private void dustDatabase() {
 		ArrayList<String>command = new ArrayList<String>();
@@ -85,7 +116,10 @@ public class DataBaseCleanerProcessor {
 		System.out.println(entries.size()+" written to Index");
 		writer.initializeDatabaseIndex();
 		writer.writeDatabaseIndex(entries);
-		System.out.println("Cleaning database");			
+		System.out.println("Cleaning database");
+		System.out.println("Remove Sequences containing Adapters");
+		getAdapterContaminatedSequences();
+		System.out.println("Dust database");
 		dustDatabase();
 		writer.appendCleanEntriesToDatabaseIndex(entries);
 	}

@@ -10,7 +10,6 @@ import java.util.HashMap;
 import CommandLineProcessor.InputParameterProcessor;
 import Utility.IndexWriter;
 import Utility.Phylum;
-import Utility.ProcessExecutor;
 import Utility.ReferenceGenome;
 import Utility.State;
 /**
