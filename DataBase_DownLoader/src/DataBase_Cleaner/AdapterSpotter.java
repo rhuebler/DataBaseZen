@@ -56,4 +56,40 @@ public class AdapterSpotter {
 		 }
 		this.clean = clean;
 	}
+	public void processAsParts(DatabaseEntry databaseEntry) {
+		this.entry =databaseEntry;
+		boolean clean = true;
+		String first="";
+		String second="";
+		int i=0;
+		 try (InputStream in = new FileInputStream(databaseEntry.getOutFile())) {
+			   InputStream gzipStream = new GZIPInputStream(in);
+			   Reader decoder = new InputStreamReader(gzipStream);
+			   BufferedReader buffered = new BufferedReader(decoder);
+			   String line;
+			   while((line = buffered.readLine())!=null) {
+				   if(!line.startsWith(">")) {
+					 if(i>0) {
+						 second =line;
+						 for(String adapter:adapters) {
+							 if((first+second).contains(adapter)) {
+								 clean = false;
+							 }
+						 }
+						 first = second;
+					 }else {
+						 first =line;
+					 }
+					 i++;
+				   } 
+			   } 
+			   buffered.close();
+			   decoder.close();
+			   gzipStream.close();  
+		   }catch(Exception e) {
+			e.printStackTrace();
+		    }
+		
+		this.clean = clean;
+	}
 }
