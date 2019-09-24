@@ -33,6 +33,9 @@ public class DatabaseProcessor {
 	private IndexWriter writer = new IndexWriter();
 	private boolean contaminatedRemoval = false;
 	private ArrayList<String> humanContaminatedAssemblies =  new  ArrayList<String>();
+	public String getIndex() {
+		return this.pathToIndex;
+	}
 	public  ArrayList<DatabaseEntry> getReferences() {
 		return references;
 	}
@@ -52,6 +55,7 @@ public class DatabaseProcessor {
 			sequenceState = State.COMPLETE;
 		}
 		output = inProcessor.getOutDir();
+		new File(output).mkdirs();
 		if(!output.endsWith("/"))
 			output+="/";
 		if(inProcessor.getTaxonNames() == null && inProcessor.getPhylum() == null) {
@@ -100,7 +104,9 @@ public class DatabaseProcessor {
 			}
 			
 		}
-		new File(output).mkdir();
+		
+		new File(output).mkdirs();
+		
 		switch(sequenceState) {
 			case ALL:
 				keyword="all";
@@ -138,7 +144,7 @@ public class DatabaseProcessor {
 		}
 		if(taxNames!=null && taxNames.size()>0) {
 			output += "list/";
-			new File(output).mkdir();
+			new File(output).mkdirs();
 			getter = new IndexGetter(fileName, taxNames, keyword, output, rep,keywordFiltering );
 		}else {
 			getter = new IndexGetter(fileName, keyword, output, rep,keywordFiltering );
@@ -154,12 +160,13 @@ public class DatabaseProcessor {
 		return getter.getDatabaseEntries();
 	}
 	public void loadDatabase() {
-		new File(output).mkdir();
+		new File(output).mkdirs();
 		EntryLoader loader = new EntryLoader() ;
 		loader.setCleanDB(cleanDatabase);
 		loader.setLengthThreshold(length);
 		writer.setOutput(output);
 		writer.initializeDatabaseIndex();
+		pathToIndex = writer.getOutput();
 		System.out.println("Downloading Entries");
 		int i=0;
 		for(DatabaseEntry entry : getEntries()) {
@@ -365,15 +372,7 @@ public class DatabaseProcessor {
 		
 		return indexEntries;
 	}
-	public void downsample() {
-		DownSamplerFromIndex downSampler = new DownSamplerFromIndex();
-		downSampler.process(pathToIndex);
-		ArrayList<DatabaseEntry> entriesToRemove = downSampler.getEntriesToRemvoe();
-		//Here we update our DB Index
-		ArrayList<DatabaseEntry> allEntries = loadDatabaseIndex(pathToIndex);
-		allEntries.removeAll(entriesToRemove);
-		writer.writeDatabaseIndex(allEntries);
-	}
+	
 	public void updateDatabase() {
 		ArrayList<DatabaseEntry> entriesToUpdate = new ArrayList<DatabaseEntry>();
 		ArrayList<DatabaseEntry> currentEntries = new ArrayList<DatabaseEntry>();

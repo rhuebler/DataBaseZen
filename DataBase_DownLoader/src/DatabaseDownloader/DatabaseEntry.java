@@ -10,6 +10,8 @@ public class DatabaseEntry {
 	/**
 	 * This class represents an entry out of NCBI
 	 */
+	private String assembly_accession; 
+	
 	private String name;
 	private String link;
 	private String outDir;
@@ -25,7 +27,37 @@ public class DatabaseEntry {
 	private boolean cleanDB = false;
 	private String time;
 	private double qualityValue;
-	public DatabaseEntry(String name, String link, String outDir, String assemblyLevel, int taxID, int speciesTaxID, String seq_rel_date, String asm_name){
+	private boolean containsAdapter = false;
+	private double onPathPercentage = 0.0;
+	private double offPathPercentage = 0.0;
+	public String getAssembly_accession() {
+		return assembly_accession;
+	}
+	public void setAssembly_accession(String assembly_accession) {
+		this.assembly_accession = assembly_accession;
+	}
+	public double getOnPathPercentage() {
+		return onPathPercentage;
+	}
+	public void setOnPathPercentage(double onPathPercentage) {
+		this.onPathPercentage = onPathPercentage;
+	}
+	
+	public double getOffPathPercentage() {
+		return offPathPercentage;
+	}
+	public void setOffPathPercentage(double offPathPercentage) {
+		this.offPathPercentage = offPathPercentage;
+	}
+	public boolean isContainsAdapter() {
+		return containsAdapter;
+	}
+	public void setContainsAdapter(boolean containsAdapter) {
+		this.containsAdapter = containsAdapter;
+	}
+	
+	public DatabaseEntry(String assembly_accession, String name, String link, String outDir, String assemblyLevel, int taxID, int speciesTaxID, String seq_rel_date, String asm_name){
+		this.assembly_accession =  assembly_accession;
 		this.link = link;
 		this.name = name.toString().replace("=", "_").replace("/", "_");
 		this.outDir = outDir;
@@ -54,33 +86,102 @@ public class DatabaseEntry {
 	}
 	public DatabaseEntry(String line) throws IOException {
 		String[]parts =	line.split("\t");
-		name = parts[0];
-		outDir = new File(parts[6]).getCanonicalPath();
-		State state = null;
-		if(parts[3].equals("COMPLETE")){
-				state = State.COMPLETE;
+		switch(parts.length) {
+			default:{
+				name = parts[0];
+				outDir = new File(parts[6]).getCanonicalPath();
+				State state = null;
+				if(parts[3].equals("COMPLETE")){
+						state = State.COMPLETE;
+				}
+				else if(parts[3].equals("CHROMOSOME")) {
+						state = State.CHROMOSOME;
+					}
+				else if(parts[3].equals("SCAFFOLD")) {
+						state =State.SCAFFOLD;
+					}
+				else if(parts[3].equals("CONTIG")) {
+						state = State.CONTIG;
+					}
+				else {
+					state = State.COMPLETE;
+				}
+				setAssembly_level(state);
+				taxID = Integer.parseInt(parts[1]);
+				speciesTaxID = Integer.parseInt(parts[2]); 
+				seq_rel_date = parts[4];
+				asm_name = parts[5];
+				setTotalContigs(Integer.parseInt(parts[8]));
+		    	setKeptContigs(Integer.parseInt(parts[9]));
+		    	setFileName(parts[6]);
+		    	time = parts[7];}
+			break;
+			case 11:{
+				name = parts[0];
+				outDir = new File(parts[6]).getCanonicalPath();
+				State state = null;
+				if(parts[3].equals("COMPLETE")){
+						state = State.COMPLETE;
+				}
+				else if(parts[3].equals("CHROMOSOME")) {
+						state = State.CHROMOSOME;
+					}
+				else if(parts[3].equals("SCAFFOLD")) {
+						state =State.SCAFFOLD;
+					}
+				else if(parts[3].equals("CONTIG")) {
+						state = State.CONTIG;
+					}
+				else {
+					state = State.COMPLETE;
+				}
+				setAssembly_level(state);
+				taxID = Integer.parseInt(parts[1]);
+				speciesTaxID = Integer.parseInt(parts[2]); 
+				seq_rel_date = parts[4];
+				asm_name = parts[5];
+				setTotalContigs(Integer.parseInt(parts[8]));
+		    	setKeptContigs(Integer.parseInt(parts[9]));
+		    	setFileName(parts[6]);
+		    	time = parts[7];
+		    	setContainsAdapter(Boolean.parseBoolean(parts[10]));
+				break;
+			}
+			case 13:{
+				name = parts[0];
+				outDir = new File(parts[6]).getCanonicalPath();
+				State state = null;
+				if(parts[3].equals("COMPLETE")){
+						state = State.COMPLETE;
+				}
+				else if(parts[3].equals("CHROMOSOME")) {
+						state = State.CHROMOSOME;
+					}
+				else if(parts[3].equals("SCAFFOLD")) {
+						state =State.SCAFFOLD;
+					}
+				else if(parts[3].equals("CONTIG")) {
+						state = State.CONTIG;
+					}
+				else {
+					state = State.COMPLETE;
+				}
+				setAssembly_level(state);
+				taxID = Integer.parseInt(parts[1]);
+				speciesTaxID = Integer.parseInt(parts[2]); 
+				seq_rel_date = parts[4];
+				asm_name = parts[5];
+				setTotalContigs(Integer.parseInt(parts[8]));
+		    	setKeptContigs(Integer.parseInt(parts[9]));
+		    	setFileName(parts[6]);
+		    	time = parts[7];
+		    	setContainsAdapter(Boolean.parseBoolean(parts[10]));
+		    	setOnPathPercentage(Double.parseDouble(parts[11]));
+		    	setOffPathPercentage(Double.parseDouble(parts[12]));
+				break;
+			}
 		}
-		else if(parts[3].equals("CHROMOSOME")) {
-				state = State.CHROMOSOME;
-			}
-		else if(parts[3].equals("SCAFFOLD")) {
-				state =State.SCAFFOLD;
-			}
-		else if(parts[3].equals("CONTIG")) {
-				state = State.CONTIG;
-			}
-		else {
-			state = State.COMPLETE;
-		}
-		setAssembly_level(state);
-		taxID = Integer.parseInt(parts[1]);
-		speciesTaxID = Integer.parseInt(parts[2]); 
-		seq_rel_date = parts[4];
-		asm_name = parts[5];
-		setTotalContigs(Integer.parseInt(parts[8]));
-    	setKeptContigs(Integer.parseInt(parts[9]));
-    	setFileName(parts[6]);
-    	time = parts[7];
+	
 	}
 	public void setQualityValue() {
 		switch(assembly_level){
@@ -175,6 +276,18 @@ public class DatabaseEntry {
 				return name +"\t"+taxID+"\t"+speciesTaxID+"\t"+assembly_level+"\t"+seq_rel_date+"\t"+asm_name+"\t"+getOutFile()+"\t"+time+"\t"+totalContigs+"\t"+keptContigs+"\t"+(totalContigs-keptContigs);
 			else	
 				return name +"\t"+taxID+"\t"+speciesTaxID+"\t"+assembly_level+"\t"+seq_rel_date+"\t"+asm_name+"\t"+getOutFile()+"\t"+ZonedDateTime.now()+"\t"+totalContigs+"\t"+keptContigs+"\t"+(totalContigs-keptContigs);
+	}
+	public String getAdapterContainedIndexLine() {
+		if(time!=null)
+			return name +"\t"+taxID+"\t"+speciesTaxID+"\t"+assembly_level+"\t"+seq_rel_date+"\t"+asm_name+"\t"+getOutFile()+"\t"+time+"\t"+totalContigs+"\t"+keptContigs+"\t"+(totalContigs-keptContigs)+containsAdapter;
+		else	
+			return name +"\t"+taxID+"\t"+speciesTaxID+"\t"+assembly_level+"\t"+seq_rel_date+"\t"+asm_name+"\t"+getOutFile()+"\t"+ZonedDateTime.now()+"\t"+totalContigs+"\t"+keptContigs+"\t"+(totalContigs-keptContigs)+containsAdapter;
+	}
+	public String getPathContainedIndexLine() {
+		if(time!=null)
+			return name +"\t"+taxID+"\t"+speciesTaxID+"\t"+assembly_level+"\t"+seq_rel_date+"\t"+asm_name+"\t"+getOutFile()+"\t"+time+"\t"+totalContigs+"\t"+keptContigs+"\t"+(totalContigs-keptContigs)+ "\t"+containsAdapter+ "\t"+ onPathPercentage+"\t"+ offPathPercentage;
+		else	
+			return name +"\t"+taxID+"\t"+speciesTaxID+"\t"+assembly_level+"\t"+seq_rel_date+"\t"+asm_name+"\t"+getOutFile()+"\t"+ZonedDateTime.now()+"\t"+totalContigs+"\t"+keptContigs+"\t"+(totalContigs-keptContigs)+"\t"+containsAdapter+ "\t"+ offPathPercentage;
 	}
 	public String getCleanedIndexLine() {
 		if(time!=null)

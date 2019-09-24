@@ -1,6 +1,10 @@
 package ArtificalReadGenerator;
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -13,22 +17,51 @@ import DatabaseDownloader.DatabaseEntry;
  *
  */
 public class ArtificalDataControler {
-	private ArrayList<DatabaseEntry> references = new ArrayList<DatabaseEntry>();
 	private InputParameterProcessor processor;
 	private static ThreadPoolExecutor executor;
 	private ArrayList<String> referenceNames = new ArrayList<String>();
+	private String pathToIndex = "";
+	private ArrayList<DatabaseEntry> entries;
+	private void loadDatabaseIndex(){
+		ArrayList<DatabaseEntry> indexEntries= new ArrayList<DatabaseEntry>();
+		File indexFile = new File(pathToIndex) ;
+		BufferedReader br;
+		try {
+			br = new BufferedReader(new FileReader(indexFile));
+			String line; 
+			int number = 0;
+			while ((line = br.readLine()) != null) {
+				//System.out.println(line);
+			    if(number!=0) {
+			    	DatabaseEntry entry = new DatabaseEntry(line);
+			    	indexEntries.add(entry);
+			    }
+			    number++;
+			} 	
+			br.close();
+		} catch (FileNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch(IOException io) {
+			io.printStackTrace();
+		}
+		
+		 entries=indexEntries;
+	}
 	public ArtificalDataControler(InputParameterProcessor processor) {
 		this.processor = processor;
-		referenceNames = processor.getReferenceFiles();
+		//referenceNames = processor.getReferenceFiles();
+		pathToIndex = processor.getPathToIndex();
 	}
 	private static void destroy(){
 		executor.shutdown();
 	}
-	public ArtificalDataControler(InputParameterProcessor processor, ArrayList<DatabaseEntry> references) {
+	public ArtificalDataControler(InputParameterProcessor processor,String pathToIndex) {
 		this.processor = processor;
-		this.references = references;
+		this.pathToIndex = pathToIndex;
 	}
 	public void process() {
+		loadDatabaseIndex();
 		String outDir = processor.getOutDir();
 		if(!outDir.endsWith("/")){
 			outDir+="/";
@@ -38,23 +71,10 @@ public class ArtificalDataControler {
 		executor=(ThreadPoolExecutor) Executors.newFixedThreadPool(processor.getNumberOfThreads());//intialize concurrent thread executor 
 		System.out.println("Using "+executor.getCorePoolSize()+" cores");
 		if(referenceNames.size()>0) {
-			for(String fileName : referenceNames) {
-				ConcurrentLoadGenomicFile task = new ConcurrentLoadGenomicFile(fileName, processor.getMaximumRate(), processor.getMaximumLength(), processor.getMinimumLength(), processor.getTransversionRate(), processor.getTransitionRate(),
-						processor.getNumberOfReads(), processor.getOutputFormat(), outDir);
-						executor.execute(task);
-	//			LoadGenomicFile file = new LoadGenomicFile(fileName, processor.getMaximumRate(), processor.getMaximumLength(), processor.getMinimumLength(), processor.getTransversionRate(), processor.getTransitionRate(),
-	//					processor.getNumberOfReads(), processor.getOutputFormat(), outDir);
-				
-			}
-		}
-		
-		if(references.size()>0) {
-			for(DatabaseEntry entry : references) {
-				ConcurrentLoadGenomicFile task = new ConcurrentLoadGenomicFile(entry.getOutFile(), processor.getMaximumRate(), processor.getMaximumLength(), processor.getMinimumLength(), processor.getTransversionRate(), processor.getTransitionRate(),
-						processor.getNumberOfReads(), processor.getOutputFormat(), outDir);
-						executor.execute(task);
-	//			LoadGenomicFile file = new LoadGenomicFile(fileName, processor.getMaximumRate(), processor.getMaximumLength(), processor.getMinimumLength(), processor.getTransversionRate(), processor.getTransitionRate(),
-	//					processor.getNumberOfReads(), processor.getOutputFormat(), outDir);
+			for(DatabaseEntry entry: entries) {
+				ConcurrentLoadGenomicFile task = new ConcurrentLoadGenomicFile(entry, processor.getMaximumRate(), processor.getMaximumLength(), processor.getMinimumLength(), processor.getTransversionRate(), processor.getTransitionRate(),
+						processor.getNumberOfReads(), processor.getOutputFormat());
+						executor.submit(task);
 				
 			}
 		}

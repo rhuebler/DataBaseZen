@@ -11,6 +11,7 @@ import java.util.zip.GZIPInputStream;
 import DatabaseDownloader.DatabaseEntry;
 
 public class AdapterSpotter {
+	//Check if A referencne contains an exact match to an Adaoter... might be insuffcient but a good start
 	 private ArrayList<String> adapters = new  ArrayList<String>();
 	 private boolean clean = true;
 	 private DatabaseEntry entry; 

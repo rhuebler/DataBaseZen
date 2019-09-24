@@ -12,13 +12,14 @@ import java.util.concurrent.Future;
 import java.util.concurrent.ThreadPoolExecutor;
 
 import CommandLineProcessor.InputParameterProcessor;
-import DatabaseDownloader.ConcurrentDownloader;
 import DatabaseDownloader.DatabaseEntry;
-import DatabaseDownloader.DownLoader;
+import DatabaseDownloader.DownSamplerFromIndex;
 import Utility.IndexWriter;
 import Utility.ProcessExecutor;
 
 public class DataBaseCleanerProcessor {
+	private double contamaninationThreshold = 0.05;
+	private double endogenousThreshold = 0.95;
 	String pathToIndex;
 	private int threads;
 	private ArrayList<String> dustCommand;
@@ -108,7 +109,30 @@ public class DataBaseCleanerProcessor {
 		
 		 entries=indexEntries;
 	}
-	
+	private void downsample() {
+		loadDatabaseIndex();
+		DownSamplerFromIndex downSampler = new DownSamplerFromIndex();
+		downSampler.process(pathToIndex);
+		ArrayList<DatabaseEntry> entriesToRemove = downSampler.getEntriesToRemvoe();
+		//Here we update our DB Index
+		entries.removeAll(entriesToRemove);
+		writer.writeDatabaseIndex(entries);
+	}
+	private void removeCompromisedReferences() {
+		loadDatabaseIndex();
+		ArrayList<DatabaseEntry> entriesToRemove = new ArrayList<DatabaseEntry>();
+		for(DatabaseEntry entry: entries) {
+
+			if(entry.getOffPathPercentage()>=contamaninationThreshold) {
+				entriesToRemove.add(entry);
+			}
+			if(entry.getOnPathPercentage()<endogenousThreshold){
+				entriesToRemove.add(entry);
+			}
+		}
+		entries.removeAll(entriesToRemove);
+		writer.writeDatabaseIndex(entries);
+	}
 	public void cleanDatabase() {
 		loadDatabaseIndex();
 		System.out.println("Recreating database index");
@@ -119,9 +143,13 @@ public class DataBaseCleanerProcessor {
 		System.out.println("Cleaning database");
 		System.out.println("Remove Sequences containing Adapters");
 		getAdapterContaminatedSequences();
+		System.out.println("Remove contaminated reference Sequences");
+		removeCompromisedReferences();
 		System.out.println("Dust database");
 		dustDatabase();
 		writer.appendCleanEntriesToDatabaseIndex(entries);
+		System.out.println("DownSample");
+		downsample();
 	}
 	
 }

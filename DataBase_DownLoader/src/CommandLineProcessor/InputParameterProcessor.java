@@ -138,10 +138,7 @@ public class InputParameterProcessor {
 		try {
 			 Scanner	in = new Scanner(f.getCanonicalFile());
 			 while(in.hasNext()){
-				// taxNames.add(in.nextLine().trim().replace('_', ' '));
-				 String line = in.nextLine().trim();
-		
-				// System.out.println(line);
+				 String line = in.nextLine().trim();	
 				 taxNames.add(line);
 			 }
 			 in.close();
@@ -286,7 +283,8 @@ public class InputParameterProcessor {
     	        		}
     	        		File f = new File(path); // get canonical path
     	        		outDir = f.getCanonicalPath()+"/";
-    	        		new File(outDir).mkdir();
+    	        		//if(!new File(outDir).getAbsoluteFile().exists())
+    	        			//new File(outDir).mkdir();
     	        		}catch(IOException io){
     	        			System.err.println(io);
     	        		}
@@ -350,6 +348,7 @@ public class InputParameterProcessor {
     	        		   if (commandLine.hasOption("taxonlist")) {
     	        			   try{
     	        				   String tax = commandLine.getOptionValue("taxonlist");
+    	        				  
     	        				   File f = new File(tax);
     	        				   if(f.getCanonicalFile().exists()){
     	    	     					readTaxList(f);
@@ -419,9 +418,9 @@ public class InputParameterProcessor {
 	        			   }
 	        		   if (commandLine.hasOption("taxonlist")) {
 	        			   try{
-	        			
 	        				   String tax = commandLine.getOptionValue("taxonlist");
 	        				   File f = new File(tax);
+	        				   System.out.println(f.getCanonicalPath());
 	        				   if(f.getCanonicalFile().exists()){
 	    	     					readTaxList(f);
 	        				   }else {

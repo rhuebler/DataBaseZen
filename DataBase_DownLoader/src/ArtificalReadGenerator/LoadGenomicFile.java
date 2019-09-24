@@ -14,11 +14,12 @@ import java.util.HashSet;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.zip.GZIPInputStream;
 
+import DatabaseDownloader.DatabaseEntry;
 import Utility.SimulateFormat;
 
 public class LoadGenomicFile { 
 	private double maximumrate= 0.1;
-	private String fileName;
+	private DatabaseEntry entry;
 	private String referenceName;
 	private int minimumLength = 35;
 	private int maximumLength = 75;
@@ -26,14 +27,14 @@ public class LoadGenomicFile {
 	private double transition = 0.1;
 	private int numberOfReads = 1000;
 	private ArrayList<String> simulatedReads = new ArrayList<String>();
-	private SimulateFormat format = SimulateFormat.FASTA;
-	private String outDir;
+	private SimulateFormat format = SimulateFormat.FASTQ;
 	private ArrayList<Double> mutationRate = new ArrayList<Double>();
 	private ArrayList<Integer> transversions= new ArrayList<Integer>();
 	private ArrayList<Integer> transitions= new ArrayList<Integer>();
 	private ArrayList<Integer> lengths = new ArrayList<Integer>();
-	public LoadGenomicFile(String file, double maxMutationRate, int maximumLength, int minimumLength, double transversionRate, 
-			double transitionRate, int numberOfReads, SimulateFormat format, String outDir){
+	private boolean mutations = false;
+	public LoadGenomicFile(DatabaseEntry entry, double maxMutationRate, int maximumLength, int minimumLength, double transversionRate, 
+			double transitionRate, int numberOfReads, SimulateFormat format){
 		maximumrate=maxMutationRate;
 		this.minimumLength = minimumLength;
 		this.maximumLength = maximumLength;
@@ -41,10 +42,9 @@ public class LoadGenomicFile {
 		transition = transitionRate;
 		this.numberOfReads = numberOfReads;
 		this.format = format;
-		this.fileName = file;
-		String[]parts = file.split("/");
+		this.entry = entry;
+		String[]parts =entry.getOutFile().split("/");
 		referenceName = parts[parts.length-1];
-		this.outDir = outDir;
 	}
 	private String mutateRead(String read) {// I want to save drawing some random numbers therefore we choose the number of positions mutate than the postitions and lastly the mutation to aplly
 		 int transitions = 0;
@@ -227,7 +227,7 @@ public class LoadGenomicFile {
 		String reference="";
 		//String header="";// currently the bottleneck is loading the file
 		 try {                           
-		        GZIPInputStream zip = new GZIPInputStream(new FileInputStream(fileName));            
+		        GZIPInputStream zip = new GZIPInputStream(new FileInputStream(entry.getOutFile()));            
 		        InputStreamReader isr = new InputStreamReader(zip, "UTF8");
 		        BufferedReader reader = new BufferedReader(isr);
 		        while ((content = reader.readLine()) != null) {
@@ -248,26 +248,50 @@ public class LoadGenomicFile {
 		int referenceLength = reference.length();
 		int k = 0;
 		System.out.println("Generate reads");
-		while(k<numberOfReads) {// relativly fast
-			int randomLength = ThreadLocalRandom.current().nextInt(minimumLength, maximumLength);
-			int position =  ThreadLocalRandom.current().nextInt(0, referenceLength - randomLength);
-			if(format == SimulateFormat.FASTA ) {// allow reads to be generated in fasta and fastq format
-				simulatedReads.add(">read"+(k+1));
-				//simulatedReads.add(mutateRead(reference.substring(position, position+randomLength)));
-				simulatedReads.add(mutateSequencePerBasePair(reference.substring(position, position+randomLength)));
-			}else if(format == SimulateFormat.FASTQ) {//not yet implemented
-				simulatedReads.add("@read"+(k+1));
-				//String mutatedSequence = reference.substring(position, position+randomLength);
-				String mutatedSequence = mutateSequencePerBasePair(reference.substring(position, position+randomLength));
-				simulatedReads.add(mutatedSequence);
-				simulatedReads.add("+");
-				String quality ="";
-				for(int i =0;i<mutatedSequence.length();i++)
-					quality +="~";
-				simulatedReads.add(quality);
+		if(mutations) {
+			while(k<numberOfReads) {// relativly fast
+				int randomLength = ThreadLocalRandom.current().nextInt(minimumLength, maximumLength);
+				int position =  ThreadLocalRandom.current().nextInt(0, referenceLength - randomLength);
+				if(format == SimulateFormat.FASTA ) {// allow reads to be generated in fasta and fastq format
+					simulatedReads.add(">read"+(k+1));
+					//simulatedReads.add(mutateRead(reference.substring(position, position+randomLength)));
+					simulatedReads.add(mutateSequencePerBasePair(reference.substring(position, position+randomLength)));
+					
+				}else if(format == SimulateFormat.FASTQ) {//not yet implemented
+					simulatedReads.add("@read"+(k+1));
+					//String mutatedSequence = reference.substring(position, position+randomLength);
+					String mutatedSequence = mutateSequencePerBasePair(reference.substring(position, position+randomLength));
+					simulatedReads.add(mutatedSequence);
+					simulatedReads.add("+");
+					String quality ="";
+					for(int i =0;i<mutatedSequence.length();i++)
+						quality +="~";
+					simulatedReads.add(quality);
+				}
+				//simulatedReads.add(mutateSequencePerBasePair(reference.substring(position, position+randomLength)));
+				k++;
 			}
-			//simulatedReads.add(mutateSequencePerBasePair(reference.substring(position, position+randomLength)));
-			k++;
+		}else {
+			while(k<numberOfReads) {// relativly fast
+				int randomLength = ThreadLocalRandom.current().nextInt(minimumLength, maximumLength);
+				int position =  ThreadLocalRandom.current().nextInt(0, referenceLength - randomLength);
+				if(format == SimulateFormat.FASTA ) {// allow reads to be generated in fasta and fastq format
+					simulatedReads.add(">read"+(k+1));
+					//simulatedReads.add(mutateRead(reference.substring(position, position+randomLength)));
+					simulatedReads.add(reference.substring(position, position+randomLength));
+					
+				}else if(format == SimulateFormat.FASTQ) {//not yet implemented
+					simulatedReads.add("@read"+(k+1));
+					//String mutatedSequence = reference.substring(position, position+randomLength);
+					String sequence = reference.substring(position, position+randomLength);
+					simulatedReads.add(sequence);
+					simulatedReads.add("+");
+					String quality ="";
+					for(int i =0;i<sequence.length();i++)
+						quality +="~";
+					simulatedReads.add(quality);
+				}
+			}
 		}
 //		System.out.println("Generated Reads");
 //		System.out.println("Mutationrate "+maximumrate+"\t"+"Transversionrate "+transversion+ "\t"+"TransitionRate "+transition+"\tlength");
@@ -284,8 +308,8 @@ public class LoadGenomicFile {
 				f="fasta";
 			else if(format == SimulateFormat.FASTQ)
 				f="fastq";
-			Path file = Paths.get(outDir+getReferenceName()+".simulated."+f);
-			System.out.println(fileName);
+			Path file = Paths.get(entry.getOutFile()+".simulated."+f);
+			System.out.println(getReferenceName()+".simulated."+f);
 			//System.out.println(file.getFileName()+" "+simulatedReads.size());
 			Files.write(file, simulatedReads, Charset.forName("UTF-8"));
 		}catch(IOException io){

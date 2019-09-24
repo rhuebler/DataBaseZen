@@ -8,19 +8,8 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.util.ArrayList;
 
-/**
- *  the purpose of this class is to open and process the summary files from NCBI then store those entries as DatabaseEntry objects
- * @author huebler
- * MTB pestis, S enterica 
- * align against dustmasked things
- * do all contigs belong to the same species  do all contigs belong to the same taxonomic path 
- * reads literature how many reads connot be placed underneath the genus 
- * 
- */
-
-
-public class IndexGetter {
-	private String url;
+public class IndexGetterGeneBank {
+	String url = "https://ftp.ncbi.nlm.nih.gov/genomes/genbank/assembly_summary_genbank.txt";
 	private ArrayList<String> taxNames;
 	private int secsConnectTimeout=300;
 	private int secsReadTimeout=90;
@@ -42,14 +31,13 @@ public class IndexGetter {
 	public ArrayList<DatabaseEntry> getDatabaseEntries(){
 		return entries;
 	}
-	public IndexGetter(String fileName, String state, String outdir, String rep, boolean keywordRemoval) {
-		this.url = fileName;
+	public IndexGetterGeneBank(String state, String outdir, String rep, boolean keywordRemoval) {
 		this.state = state;
 		this.outdir = outdir;
 		this.rep = rep;
 		this.keywordRemoval = keywordRemoval;
 	}
-	public IndexGetter(String fileName, ArrayList<String> taxNames, String state, String outdir, String rep, boolean keywordRemoval) {
+	public IndexGetterGeneBank(String fileName, ArrayList<String> taxNames, String state, String outdir, String rep, boolean keywordRemoval) {
 		this.url = fileName;
 		this.taxNames = taxNames;
 		this.state = state;
@@ -73,7 +61,7 @@ public class IndexGetter {
 							outdir, parts[11],Integer.parseInt(parts[5]), Integer.parseInt(parts[6]),parts[14],parts[15]));
 			}
 		}else {
-			entries.add(new DatabaseEntry(parts[0], (parts[7]+" "+parts[8]).toString(),(link+GI+"_genomic.fna.gz"), 
+			entries.add(new DatabaseEntry(parts[0],(parts[7]+" "+parts[8]).toString(),(link+GI+"_genomic.fna.gz"), 
 					outdir, parts[11],Integer.parseInt(parts[5]), Integer.parseInt(parts[6]),parts[14],parts[15]));
 		}
 	}
@@ -128,3 +116,4 @@ public class IndexGetter {
 			
 	}
 }
+

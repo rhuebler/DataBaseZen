@@ -26,7 +26,9 @@ public class IndexWriter {
 	public String getOutput() {
 		return output;
 	}
-
+	public String geIndex() {
+		return output+"index.txt";
+	}
 	public void setOutput(String output) {
 		this.output = output;
 	}

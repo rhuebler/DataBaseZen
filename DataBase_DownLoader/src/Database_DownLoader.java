@@ -29,7 +29,7 @@ public class Database_DownLoader {
 						DataBaseCleanerProcessor cleaner = new DataBaseCleanerProcessor(inProcessor);
 						cleaner.cleanDatabase();
 					}
-					ArtificalDataControler controler = new ArtificalDataControler(inProcessor, processor.getReferences());
+					ArtificalDataControler controler = new ArtificalDataControler(inProcessor,processor.getIndex());
 					controler.process();
 					break;
 					}
