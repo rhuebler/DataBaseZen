@@ -25,10 +25,6 @@ public class Database_DownLoader {
 					DatabaseProcessor processor = new DatabaseProcessor(inProcessor);
 					processor.process();
 					processor.loadDatabase();
-					if(inProcessor.iscleanDB()) {
-						DataBaseCleanerProcessor cleaner = new DataBaseCleanerProcessor(inProcessor);
-						cleaner.cleanDatabase();
-					}
 					ArtificalDataControler controler = new ArtificalDataControler(inProcessor,processor.getIndex());
 					controler.process();
 					break;
@@ -37,12 +33,17 @@ public class Database_DownLoader {
 					DatabaseProcessor processor = new DatabaseProcessor(inProcessor);
 					processor.process();
 					processor.loadDatabase();
-					if(inProcessor.iscleanDB()) {
-						DataBaseCleanerProcessor cleaner = new DataBaseCleanerProcessor(inProcessor);
-						cleaner.cleanDatabase();
-					}
 					break;
 					}
+				case CLEAN_ADAPTERS:{
+					DataBaseCleanerProcessor cleaner = new DataBaseCleanerProcessor(inProcessor);
+					cleaner.removeAdapterContaminatedSequences();
+					break;
+				}
+				case CLEAN_TAXONOMIC:{
+					DataBaseCleanerProcessor cleaner = new DataBaseCleanerProcessor(inProcessor);
+					cleaner.cleanCompromisedSequencesDatabase();
+				}
 				case CREATE:{
 					ArtificalDataControler controler = new ArtificalDataControler(inProcessor);
 					controler.process();

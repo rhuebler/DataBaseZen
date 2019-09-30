@@ -241,23 +241,33 @@ public class InputParameterProcessor {
     	    //parse arguments into the comandline parser
     	        commandLine = parser.parse(options, parameters);
  
+    	        
+    	        if(commandLine.hasOption("h")){////help
+    	        	String header = "I still need a usefull-name-program";
+    	    	    String footer = "In case you encounter an error drop an email with an useful description to huebler@shh.mpg.de";
+    	    	    HelpFormatter formatter = new HelpFormatter();
+    	    	    formatter.setWidth(500);
+    	    	    formatter.printHelp("I have no name :(", header, options, footer, true);   
+    	    	    System.exit(0);
+    	        }
     	        //check if mode is set and if allowed values are set
     	        if(commandLine.hasOption('m')){
-    	        	 if(Pattern.compile(Pattern.quote("full"), Pattern.CASE_INSENSITIVE).matcher(commandLine.getOptionValue("mode")).find()){
-    	        		 mode = ExecutionMode.BOTH;
-    	        	 }else if(Pattern.compile(Pattern.quote("download"), Pattern.CASE_INSENSITIVE).matcher(commandLine.getOptionValue("mode")).find()) {
+    	        	 if(Pattern.compile(Pattern.quote("download"), Pattern.CASE_INSENSITIVE).matcher(commandLine.getOptionValue("mode")).find()) {
     	        		 mode = ExecutionMode.DOWNLOAD;
     	        	 }else if(Pattern.compile(Pattern.quote("create"), Pattern.CASE_INSENSITIVE).matcher(commandLine.getOptionValue("mode")).find()) {
     	        		 mode = ExecutionMode.CREATE;
     	        	 }else if(Pattern.compile(Pattern.quote("update"), Pattern.CASE_INSENSITIVE).matcher(commandLine.getOptionValue("mode")).find()) {
     	        		 mode = ExecutionMode.UPDATE;
+    	        	 }else if(Pattern.compile(Pattern.quote("taxonomic_clean"), Pattern.CASE_INSENSITIVE).matcher(commandLine.getOptionValue("mode")).find()) {
+    	        		 mode = ExecutionMode.CLEAN_TAXONOMIC;
+    	        		  
+    	        	 }else if(Pattern.compile(Pattern.quote("adapter_clean"), Pattern.CASE_INSENSITIVE).matcher(commandLine.getOptionValue("mode")).find()) {
+    	        		 mode = ExecutionMode.CLEAN_ADAPTERS;
+    	        		 
     	        	 }else {
     	        		 System.err.println("Unknown Mode Shutting down");	
     	        		 System.exit(1);
     	        	 }
-    	        }else {
-    	        	System.out.println("Setting Execution Mode to full");	
-    	        	mode = ExecutionMode.BOTH;
     	        }
 
     	        if (commandLine.hasOption("wgs")) {
@@ -519,15 +529,28 @@ public class InputParameterProcessor {
 	        				}  
     	        		break;
     	        	}
+    	        	
+    	        	case CLEAN_TAXONOMIC:{
+    	        		if(commandLine.hasOption("index")) {
+	        			    pathToIndex = commandLine.getOptionValue("index");
+	        				} else {
+	        					System.err.println("No database index provided!!! Cannot clean DB!!!");
+	        					System.exit(1);
+	        				}  
+    	        		
+    	        		break;
+    	        	}
+    	        	case CLEAN_ADAPTERS:{
+    	        		if(commandLine.hasOption("index")) {
+	        			    pathToIndex = commandLine.getOptionValue("index");
+	        				} else {
+	        					System.err.println("No database index provided!!! Cannot clean Index!!!");
+	        					System.exit(1);
+	        				}  
+    	        		break;
+    	        	}
     	        }
-    	        if(commandLine.hasOption("h")){////help
-    	        	String header = "I still need a usefull-name-program";
-    	    	    String footer = "In case you encounter an error drop an email with an useful description to huebler@shh.mpg.de";
-    	    	    HelpFormatter formatter = new HelpFormatter();
-    	    	    formatter.setWidth(500);
-    	    	    formatter.printHelp("I have no name :(", header, options, footer, true);   
-    	    	    System.exit(0);
-    	        }
+    	  
     	        if(!commandLine.hasOption("o")){
 	    	        	System.err.println("output has to be specified -h for help \n Shutting down");
 	    	        	System.exit(1);

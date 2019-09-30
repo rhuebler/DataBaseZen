@@ -186,17 +186,17 @@ public class DatabaseEntry {
 	public void setQualityValue() {
 		switch(assembly_level){
 			case COMPLETE:
-				qualityValue = 100;
+				qualityValue = 100*onPathPercentage;
 				break;
 			case CHROMOSOME:
-				qualityValue = (90-(totalContigs-keptContigs)/2);
+				qualityValue = (90-(totalContigs-keptContigs)/2)*onPathPercentage;
 				
 				break;
 			case SCAFFOLD:
-				qualityValue = (80-(totalContigs-keptContigs)/2);
+				qualityValue = (80-(totalContigs-keptContigs)/2)*onPathPercentage;
 				break;	
 			case CONTIG:
-				qualityValue = (70-(totalContigs-keptContigs)/2);
+				qualityValue = (70-(totalContigs-keptContigs)/2)*onPathPercentage;
 				break;
 		default:
 			qualityValue=0;
@@ -217,13 +217,13 @@ public class DatabaseEntry {
 			if(!outDir.endsWith("/")){
 			outDir+="/";
 			}
-			return outDir+name+"_"+asm_name+".fna.gz";
+			return outDir+name+"_"+asm_name+"_"+taxID+".fna.gz";
 		}else 
 			return fileName;
 	}
 	
 	public String getFilteredFile() {
-		return outDir+name+"_"+asm_name+"_dusted.fna.gz";
+		return outDir+name+"_"+asm_name+"_dusted_"+taxID+".fna.gz";
 	}
 	public String getName() {
 		return name;

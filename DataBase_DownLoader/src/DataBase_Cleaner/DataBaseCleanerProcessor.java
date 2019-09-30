@@ -133,16 +133,19 @@ public class DataBaseCleanerProcessor {
 		entries.removeAll(entriesToRemove);
 		writer.writeDatabaseIndex(entries);
 	}
-	public void cleanDatabase() {
+	public void removeAdapterContaminatedSequences( ) {
 		loadDatabaseIndex();
 		System.out.println("Recreating database index");
 		writer.setOutput(output);
-		System.out.println(entries.size()+" written to Index");
 		writer.initializeDatabaseIndex();
 		writer.writeDatabaseIndex(entries);
+		System.out.println(entries.size()+" written to Index");
 		System.out.println("Cleaning database");
 		System.out.println("Remove Sequences containing Adapters");
 		getAdapterContaminatedSequences();
+	}
+	public void cleanCompromisedSequencesDatabase() {
+		
 		System.out.println("Remove contaminated reference Sequences");
 		removeCompromisedReferences();
 		System.out.println("Dust database");
