@@ -44,43 +44,78 @@ public class DataBaseCleanerProcessor {
 		command.add("-linker"); command.add(""+inProcessor.getDustLinker());
 		dustCommand = command;
 	}
-	private void getAdapterContaminatedSequences() {
+	public void progressPercentage(int remain, int total) {//Adapted from  https://stackoverflow.com/questions/852665/command-line-progress-bar-in-java
+	    if (remain > total) {
+	        throw new IllegalArgumentException();
+	    }
+	    int maxBareSize = 10; // 10unit for 100%
+	    int remainProcent = ((100 * remain) / total) / maxBareSize;
+	    char defaultChar = '-';
+	    String icon = "*";
+	    String bare = new String(new char[maxBareSize]).replace('\0', defaultChar) + "]";
+	    StringBuilder bareDone = new StringBuilder();
+	    bareDone.append("[");
+	    for (int i = 0; i < remainProcent; i++) {
+	        bareDone.append(icon);
+	    }
+	    String bareRemain = bare.substring(remainProcent, bare.length());
+	    System.out.print("\r" + bareDone + bareRemain + " " + remainProcent * 10 + "%");
+	    if (remain == total) {
+	        System.out.print("\n");
+	    }
+	}
+	private void setAdapterContaminatedSequences() {
+		System.out.println("Using "+threads+" threads to spot adapters in Reference sequences");
 		executor=(ThreadPoolExecutor) Executors.newFixedThreadPool(threads);
 		ArrayList<Future<AdapterSpotter>> futureList = new ArrayList<Future<AdapterSpotter>>();
+		int i =1;
 		for(DatabaseEntry entry : entries) {
 			ConcurrentAdapterSpotter task = new ConcurrentAdapterSpotter(entry);
 			Future<AdapterSpotter> future = executor.submit(task);
 			futureList.add(future);
+			progressPercentage(i,entries.size());
+			i++;
 		}
 		executor.shutdown();
-		ArrayList<DatabaseEntry> entriesToRemove = new ArrayList<DatabaseEntry>();
+		ArrayList<DatabaseEntry> entriesToUpDate = new ArrayList<DatabaseEntry>();
 		for (Future<AdapterSpotter> futureSpotter: futureList) {
 			try{
 			AdapterSpotter spotter = futureSpotter.get();
-			if(!spotter.isClean()) {
-				entriesToRemove.add(spotter.getEntry());
-				File file = new File(spotter.getEntry().getOutFile());
-				file.delete();
-			}
+			entriesToUpDate.add(spotter.getEntry());
 			}catch(InterruptedException iEx) {
 				iEx.printStackTrace();
 			}catch(ExecutionException eEx) {
 				eEx.printStackTrace();
 			}
+			this.entries = entriesToUpDate;
+		}
+	}
+	private void removeAdapterContaminatedSequencesFromFolder() {
+		ArrayList<DatabaseEntry> entriesToRemove = new ArrayList<DatabaseEntry>();
+		for(DatabaseEntry entry : entries) {
+			if(entry.isContainsAdapter()) {
+				entriesToRemove.add(entry);
+				File file = new File(entry.getOutFile());
+				file.delete();
+			}
 			entries.removeAll(entriesToRemove);
 		}
 	}
+	
 	private void dustDatabase() {
 		ArrayList<String>command = new ArrayList<String>();
 		command.add("rm");
 		command.add("placeholder");
 		ProcessExecutor executor = new ProcessExecutor();
+		int i=1;
 		for(DatabaseEntry entry : entries) {
 			dustCommand.set(2, entry.getOutFile()); //change input to inputfile is index 2
 			dustCommand.set(4, entry.getFilteredFile()); //change output to outputfile is index 4
 			executor.run(dustCommand);
 			command.set(1, entry.getFilteredFile());
 			executor.run(command);
+			progressPercentage(i,entries.size());
+			i++;
 		}
 	}	
 	private void loadDatabaseIndex(){
@@ -136,13 +171,19 @@ public class DataBaseCleanerProcessor {
 	public void removeAdapterContaminatedSequences( ) {
 		loadDatabaseIndex();
 		System.out.println("Recreating database index");
-		writer.setOutput(output);
+		writer.setOutput(new File(pathToIndex).getParent());
 		writer.initializeDatabaseIndex();
 		writer.writeDatabaseIndex(entries);
 		System.out.println(entries.size()+" written to Index");
-		System.out.println("Cleaning database");
-		System.out.println("Remove Sequences containing Adapters");
-		getAdapterContaminatedSequences();
+		System.out.println("Finding Sequences containing Adapters");
+		setAdapterContaminatedSequences();
+		System.out.println("Updating Index with Adapter Information");
+		writer.initializeDatabaseIndex();
+		writer.writeDatabaseAdapterIndex(entries);
+		System.out.println("Removing Adapter contained sequences");
+//		removeAdapterContaminatedSequencesFromFolder();
+//		writer.initializeDatabaseIndex();
+//		writer.writeDatabaseIndex(entries);
 	}
 	public void cleanCompromisedSequencesDatabase() {
 		

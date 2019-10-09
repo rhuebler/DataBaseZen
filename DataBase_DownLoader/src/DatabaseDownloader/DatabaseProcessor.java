@@ -33,6 +33,30 @@ public class DatabaseProcessor {
 	private IndexWriter writer = new IndexWriter();
 	private boolean contaminatedRemoval = false;
 	private ArrayList<String> humanContaminatedAssemblies =  new  ArrayList<String>();
+	
+	
+	public void progressPercentage(int remain, int total) {//Adapted from  https://stackoverflow.com/questions/852665/command-line-progress-bar-in-java
+	    if (remain > total) {
+	        throw new IllegalArgumentException();
+	    }
+	    int maxBareSize = 10; // 10unit for 100%
+	    int remainProcent = ((100 * remain) / total) / maxBareSize;
+	    char defaultChar = '-';
+	    String icon = "*";
+	    String bare = new String(new char[maxBareSize]).replace('\0', defaultChar) + "]";
+	    StringBuilder bareDone = new StringBuilder();
+	    bareDone.append("[");
+	    for (int i = 0; i < remainProcent; i++) {
+	        bareDone.append(icon);
+	    }
+	    String bareRemain = bare.substring(remainProcent, bare.length());
+	    System.out.print("\r" + bareDone + bareRemain + " " + remainProcent * 10 + "%");
+	    if (remain == total) {
+	        System.out.print("\n");
+	    }
+	}
+	
+	
 	public String getIndex() {
 		return this.pathToIndex;
 	}
@@ -155,6 +179,11 @@ public class DatabaseProcessor {
 		if(contaminatedRemoval) {
 			getter.removeHumanContaminatedAssemblies(humanContaminatedAssemblies);
 		}
+		if(threads>1) {
+			loadDatabaseConcurrently();
+		}else {
+			loadDatabase();
+		}
 	}
 	public ArrayList<DatabaseEntry> getEntries(){
 		return getter.getDatabaseEntries();
@@ -167,15 +196,15 @@ public class DatabaseProcessor {
 		writer.setOutput(output);
 		writer.initializeDatabaseIndex();
 		pathToIndex = writer.getOutput();
-		System.out.println("Downloading Entries");
+		System.out.println("Downloading Entries sequencly");
 		int i=0;
 		for(DatabaseEntry entry : getEntries()) {
 			try{
 				boolean result = loader.download(entry);
-				if(result)
+				if(result) {
 					writer.appendEntryToDatabaseIndex(entry);
-				if(((Math.round(i/ getEntries().size())*100) % 10)==0)
-					System.out.println((Math.round(i/ getEntries().size())*100) +" done");
+				}
+				progressPercentage(i, getEntries().size());
 				i++;
 			}catch(Exception e) {
 				e.printStackTrace();
@@ -209,18 +238,17 @@ public class DatabaseProcessor {
 		EntryLoader loader = new EntryLoader() ;
 		loader.setCleanDB(cleanDatabase);
 		loader.setLengthThreshold(length);
-		loader.intiliazeExecutor();
+		loader.intiliazeExecutor(threads);
 		writer.setOutput(output);
 		writer.initializeDatabaseIndex();
-		System.out.println("Downloading Entries");
+		System.out.println("Downloading Entries Concurrently");
 		int i=0;
 		for(DatabaseEntry entry : getEntries()) {
 			try{
 				boolean result = loader.download(entry);
 				if(result)
 					writer.appendEntryToDatabaseIndex(entry);
-				if(((Math.round(i/ getEntries().size())*100) % 10)==0)
-					System.out.println((Math.round(i/ getEntries().size())*100) +" done");
+				progressPercentage(i, getEntries().size());
 				i++;
 			}catch(Exception e) {
 				e.printStackTrace();
@@ -234,7 +262,7 @@ public class DatabaseProcessor {
 		//if we fail to download something we collect those entries and try again at the end
 		if(loader.getFailedReferences().size()>0) {
 			i=0;
-			loader.intiliazeExecutor();
+			loader.intiliazeExecutor(threads);
 			ArrayList<DatabaseEntry> list = loader.getFailedReferences();
 			loader.clearFailedReferences();
 			for(DatabaseEntry entry : list) {
@@ -262,15 +290,14 @@ public class DatabaseProcessor {
 		new File(output).mkdir();
 		EntryLoader loader = new EntryLoader() ;
 		loader.setCleanDB(cleanDatabase);
-		System.out.println("Downloading Entries");
+		System.out.println("Downloading Entries sequencely");
 		int i=0;
 		for(DatabaseEntry entry : entriesToUpdate) {
 			try{
 				boolean result = loader.download(entry);
 				if(result)
 					writer.appendEntryToDatabaseIndex(entry);
-				if((((i*100)/entriesToUpdate.size()) % 10)==0)
-					System.out.println(((i*100)/entriesToUpdate.size()) +" done");
+				progressPercentage(i, getEntries().size());
 				i++;
 			}catch(Exception e) {
 				e.printStackTrace();
@@ -299,14 +326,13 @@ public class DatabaseProcessor {
 			new File(output).mkdir();
 			EntryLoader loader = new EntryLoader() ;
 			loader.setCleanDB(cleanDatabase);
-			loader.intiliazeExecutor();
-			System.out.println("Downloading Entries");
+			loader.intiliazeExecutor(threads);
+			System.out.println("Downloading Entries Concurrently");
 			int i=0;
 			for(DatabaseEntry entry : entriesToUpdate) {
 				try{
 					loader.downloadConcurrently(entry);
-					if((((i*100)/entriesToUpdate.size()) % 10)==0)
-						System.out.println(((i*100)/entriesToUpdate.size()) +" done");
+					progressPercentage(i, getEntries().size());
 					i++;
 				}catch(Exception e) {
 					e.printStackTrace();
@@ -319,7 +345,7 @@ public class DatabaseProcessor {
 		//if we fail to download something we collect those entries and try again at the end
 		if(loader.getFailedReferences().size()>0) {
 			i=0;
-			loader.intiliazeExecutor();
+			loader.intiliazeExecutor(threads);
 			ArrayList<DatabaseEntry> list = loader.getFailedReferences();
 			loader.clearFailedReferences();
 			for(DatabaseEntry entry : list) {

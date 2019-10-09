@@ -15,6 +15,7 @@ public class DatabaseEntry {
 	private String name;
 	private String link;
 	private String outDir;
+	private String outFile;
 	private int taxID;
 	private int speciesTaxID;
 	private State assembly_level = null;
@@ -59,8 +60,12 @@ public class DatabaseEntry {
 	public DatabaseEntry(String assembly_accession, String name, String link, String outDir, String assemblyLevel, int taxID, int speciesTaxID, String seq_rel_date, String asm_name){
 		this.assembly_accession =  assembly_accession;
 		this.link = link;
-		this.name = name.toString().replace("=", "_").replace("/", "_");
-		this.outDir = outDir;
+		this.name = name.toString();
+		this.name = this.name.replace("=", "_").replace("/", "_").replace(" ", "_");
+		if(!outDir.endsWith("/")){
+			this.outDir= outDir+"/";
+			
+		}
 		State state = null;
 		if(assemblyLevel.equals("Complete genome")){
 				state = State.COMPLETE;
@@ -83,13 +88,16 @@ public class DatabaseEntry {
 		this.setSpeciesTaxID(speciesTaxID);
 		this.setSeq_rel_date(seq_rel_date);
 		this.setAsm_name(asm_name);
+		this.outFile = outDir+name+"_"+asm_name+"_"+taxID+".fna.gz";
+		
 	}
 	public DatabaseEntry(String line) throws IOException {
 		String[]parts =	line.split("\t");
 		switch(parts.length) {
 			default:{
 				name = parts[0];
-				outDir = new File(parts[6]).getCanonicalPath();
+				outFile = new File(parts[6]).getCanonicalPath();
+				this.outDir = new File(this.outFile).getParent();
 				State state = null;
 				if(parts[3].equals("COMPLETE")){
 						state = State.COMPLETE;
@@ -118,7 +126,8 @@ public class DatabaseEntry {
 			break;
 			case 11:{
 				name = parts[0];
-				outDir = new File(parts[6]).getCanonicalPath();
+				outFile = new File(parts[6]).getCanonicalPath();
+				this.outDir = new File(this.outFile).getParent();
 				State state = null;
 				if(parts[3].equals("COMPLETE")){
 						state = State.COMPLETE;
@@ -149,7 +158,8 @@ public class DatabaseEntry {
 			}
 			case 13:{
 				name = parts[0];
-				outDir = new File(parts[6]).getCanonicalPath();
+				outFile = new File(parts[6]).getCanonicalPath();
+				this.outDir = new File(this.outFile).getParent();
 				State state = null;
 				if(parts[3].equals("COMPLETE")){
 						state = State.COMPLETE;
@@ -190,7 +200,6 @@ public class DatabaseEntry {
 				break;
 			case CHROMOSOME:
 				qualityValue = (90-(totalContigs-keptContigs)/2)*onPathPercentage;
-				
 				break;
 			case SCAFFOLD:
 				qualityValue = (80-(totalContigs-keptContigs)/2)*onPathPercentage;
@@ -213,13 +222,7 @@ public class DatabaseEntry {
 		fileName=s;
 	}
 	public String getOutFile() {
-		if(outDir!= null) {
-			if(!outDir.endsWith("/")){
-			outDir+="/";
-			}
-			return outDir+name+"_"+asm_name+"_"+taxID+".fna.gz";
-		}else 
-			return fileName;
+		return this.outFile;
 	}
 	
 	public String getFilteredFile() {

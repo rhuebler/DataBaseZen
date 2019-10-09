@@ -23,7 +23,7 @@ import Utility.SimulateFormat;
 import Utility.State;
 
 /**
- * This class is used To Parse Input Parameters for the databsease to make input more flexible and less error prone
+ * This class is used To Parse Input Parameters for the database to make input more flexible and less error prone
  * uses the console parameters as input and fill up all Parameter slots to control subsequent functions
  * @author huebler
  *
@@ -158,7 +158,7 @@ public class InputParameterProcessor {
 		input += "\n-o "+outDir;
 		input +="\n--mode	"+mode;
 		input +="\n--phylum	"+phylum;
-		input +="\n--state	";
+		input +="\n--state	"+sequenceState;
 		input+="\n--wgs	"+reference;
 		String s = "";
 		for(String tax:taxNames) {
@@ -191,10 +191,10 @@ public class InputParameterProcessor {
     	    Option option_Database = Option.builder("r").longOpt("references").argName("String").hasArgs().desc("Specify where to locate directory with references downloaded outside from this program").build();
     	    Option option_Output = Option.builder("o").longOpt("output").argName("String").hasArg().desc("Specify out directory").build();
     	    Option optionMode = Option.builder("m").longOpt("mode").argName("String").hasArg().desc("full, download, create, update").build();
-    	    Option optionPhylum = Option.builder("p").longOpt("phylum").argName("String").hasArg().desc("fullNT, bacteria, viral, eukaryotes").build();
+    	    Option optionPhylum = Option.builder("p").longOpt("phylum").argName("String").hasArg().desc("fullNT, bacteria, viral, eukaryotes, adapter_clean, taxonomic_clean").build();
     	    Option optionState = Option.builder("s").longOpt("state").argName("String").hasArg().desc("complete, plasmid, assembly, all").build();
     	    Option optionTaxonList = Option.builder("t").longOpt("taxonlist").argName("String").hasArg().desc("A List with all taxa for which an analysis is desired.\n Taxa List will also be added to download").build();
-    	    Option optionRepresentativeGenomes = Option.builder("w").longOpt("wgs").hasArg().argName("String").desc("Accepted values reference_genome, representative_genome, all, na").build();
+    	    Option optionRepresentativeGenomes = Option.builder("w").longOpt("wgs").hasArg().argName("String").desc("Accepted values reference_genome, representative_genome, all, strict, na").build();
     	    Option option_Help = Option.builder("h").longOpt("help").optionalArg(true).desc("Print Help").build();
     	    Option optionMaxRate = Option.builder("").longOpt("maxRate").optionalArg(true).desc("Maximum Muatation Rate betwen 0.0 and 1.0").build();
     	    Option optionMinimumLength = Option.builder("").longOpt("minLength").optionalArg(true).desc("Set minimum ReadLength by default 35").build();

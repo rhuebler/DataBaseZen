@@ -92,5 +92,6 @@ public class AdapterSpotter {
 		    }
 		
 		this.clean = clean;
+		this.entry.setContainsAdapter(!this.clean);
 	}
 }

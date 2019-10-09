@@ -46,7 +46,8 @@ public class EntryLoader {
 			e.printStackTrace();
 		}
 	}
-	public void intiliazeExecutor(){
+	public void intiliazeExecutor(int threads){
+		this.numThreads = threads;
 		executor=(ThreadPoolExecutor) Executors.newFixedThreadPool(numThreads);
 	}
 	public void setCleanDB(boolean b) {
