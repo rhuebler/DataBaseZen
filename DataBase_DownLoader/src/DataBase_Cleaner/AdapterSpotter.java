@@ -13,7 +13,7 @@ import DatabaseDownloader.DatabaseEntry;
 public class AdapterSpotter {
 	//Check if A referencne contains an exact match to an Adaoter... might be insuffcient but a good start
 	 private ArrayList<String> adapters = new  ArrayList<String>();
-	 private boolean clean = true;
+	 private boolean containsAdapter = false;
 	 private DatabaseEntry entry; 
 	 public AdapterSpotter() {
 		 ArrayList<String> adapters = new  ArrayList<String>();
@@ -24,15 +24,15 @@ public class AdapterSpotter {
 			adapters.add("ACGCCTTGGCCGT");
 			this.adapters=adapters;
 	 }
-	public boolean isClean() {
-		return this.clean;
+	public boolean isAdapterContained() {
+		return this.containsAdapter;
 	}
 	public  DatabaseEntry getEntry(){
 		return entry;
 	}
 	public void process(DatabaseEntry databaseEntry) {
 		this.entry =databaseEntry;
-		boolean clean = true;
+		boolean containsAdapter = false;
 		String sequence="";
 		 try (InputStream in = new FileInputStream(databaseEntry.getOutFile())) {
 			   InputStream gzipStream = new GZIPInputStream(in);
@@ -52,14 +52,15 @@ public class AdapterSpotter {
 		    }
 		 for(String adapter:adapters) {
 			 if(sequence.contains(adapter)) {
-				 clean = false;
+				 containsAdapter = true;
 			 }
 		 }
-		this.clean = clean;
+		this.containsAdapter = containsAdapter;
+		this.entry.setContainsAdapter(containsAdapter);
 	}
 	public void processAsParts(DatabaseEntry databaseEntry) {
 		this.entry =databaseEntry;
-		boolean clean = true;
+		boolean containsAdapter = false;
 		String first="";
 		String second="";
 		int i=0;
@@ -74,7 +75,7 @@ public class AdapterSpotter {
 						 second =line;
 						 for(String adapter:adapters) {
 							 if((first+second).contains(adapter)) {
-								 clean = false;
+								 containsAdapter = true;
 							 }
 						 }
 						 first = second;
@@ -91,7 +92,7 @@ public class AdapterSpotter {
 			e.printStackTrace();
 		    }
 		
-		this.clean = clean;
-		this.entry.setContainsAdapter(!this.clean);
+		this.containsAdapter = containsAdapter;
+		this.entry.setContainsAdapter(this.containsAdapter);
 	}
 }

@@ -171,7 +171,7 @@ public class DataBaseCleanerProcessor {
 	public void removeAdapterContaminatedSequences( ) {
 		loadDatabaseIndex();
 		System.out.println("Recreating database index");
-		writer.setOutput(new File(pathToIndex).getParent());
+		writer.setOutput(new File(pathToIndex).getParent()+"/");
 		writer.initializeDatabaseIndex();
 		writer.writeDatabaseIndex(entries);
 		System.out.println(entries.size()+" written to Index");
@@ -185,8 +185,14 @@ public class DataBaseCleanerProcessor {
 //		writer.initializeDatabaseIndex();
 //		writer.writeDatabaseIndex(entries);
 	}
+	
 	public void cleanCompromisedSequencesDatabase() {
-		
+		loadDatabaseIndex();
+		System.out.println("Recreating database index");
+		writer.setOutput(new File(pathToIndex).getParent()+"/");
+		writer.initializeDatabaseIndex();
+		writer.writeDatabaseIndex(entries);
+		System.out.println(entries.size()+" written to Index");
 		System.out.println("Remove contaminated reference Sequences");
 		removeCompromisedReferences();
 		System.out.println("Dust database");

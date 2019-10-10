@@ -22,6 +22,7 @@ public class DatabaseEntry {
 	private String realm;
 	private String seq_rel_date;
 	private String asm_name;
+	private String representative="na";
 	private int totalContigs = 0;
 	private int keptContigs = 0;
 	private String fileName ="";
@@ -57,7 +58,8 @@ public class DatabaseEntry {
 		this.containsAdapter = containsAdapter;
 	}
 	
-	public DatabaseEntry(String assembly_accession, String name, String link, String outDir, String assemblyLevel, int taxID, int speciesTaxID, String seq_rel_date, String asm_name){
+	public DatabaseEntry(String assembly_accession, String name, String link, String outDir, String assemblyLevel, 
+			int taxID, int speciesTaxID, String seq_rel_date, String asm_name, String representative){
 		this.assembly_accession =  assembly_accession;
 		this.link = link;
 		this.name = name.toString();
@@ -89,7 +91,7 @@ public class DatabaseEntry {
 		this.setSeq_rel_date(seq_rel_date);
 		this.setAsm_name(asm_name);
 		this.outFile = outDir+name+"_"+asm_name+"_"+taxID+".fna.gz";
-		
+		this.representative = representative;
 	}
 	public DatabaseEntry(String line) throws IOException {
 		String[]parts =	line.split("\t");
@@ -119,13 +121,18 @@ public class DatabaseEntry {
 				speciesTaxID = Integer.parseInt(parts[2]); 
 				seq_rel_date = parts[4];
 				asm_name = parts[5];
-				setTotalContigs(Integer.parseInt(parts[8]));
-		    	setKeptContigs(Integer.parseInt(parts[9]));
+				
 		    	setFileName(parts[6]);
-		    	time = parts[7];}
+		    	time = parts[7];
+		    	representative = parts[8];
+		    	setTotalContigs(Integer.parseInt(parts[9]));
+		    	setKeptContigs(Integer.parseInt(parts[10]));
 			break;
+			}
 			case 11:{
 				name = parts[0];
+				taxID = Integer.parseInt(parts[1]);
+				speciesTaxID = Integer.parseInt(parts[2]); 
 				outFile = new File(parts[6]).getCanonicalPath();
 				this.outDir = new File(this.outFile).getParent();
 				State state = null;
@@ -145,18 +152,17 @@ public class DatabaseEntry {
 					state = State.COMPLETE;
 				}
 				setAssembly_level(state);
-				taxID = Integer.parseInt(parts[1]);
-				speciesTaxID = Integer.parseInt(parts[2]); 
+				
 				seq_rel_date = parts[4];
 				asm_name = parts[5];
-				setTotalContigs(Integer.parseInt(parts[8]));
-		    	setKeptContigs(Integer.parseInt(parts[9]));
+				
 		    	setFileName(parts[6]);
 		    	time = parts[7];
-		    	setContainsAdapter(Boolean.parseBoolean(parts[10]));
+		    	setTotalContigs(Integer.parseInt(parts[8]));
+		    	setKeptContigs(Integer.parseInt(parts[9]));
 				break;
 			}
-			case 13:{
+			case 12:{
 				name = parts[0];
 				outFile = new File(parts[6]).getCanonicalPath();
 				this.outDir = new File(this.outFile).getParent();
@@ -181,13 +187,49 @@ public class DatabaseEntry {
 				speciesTaxID = Integer.parseInt(parts[2]); 
 				seq_rel_date = parts[4];
 				asm_name = parts[5];
-				setTotalContigs(Integer.parseInt(parts[8]));
-		    	setKeptContigs(Integer.parseInt(parts[9]));
+				
 		    	setFileName(parts[6]);
 		    	time = parts[7];
-		    	setContainsAdapter(Boolean.parseBoolean(parts[10]));
-		    	setOnPathPercentage(Double.parseDouble(parts[11]));
-		    	setOffPathPercentage(Double.parseDouble(parts[12]));
+		    	representative = parts[8];
+		    	setTotalContigs(Integer.parseInt(parts[9]));
+		    	setKeptContigs(Integer.parseInt(parts[10]));
+		    	setContainsAdapter(Boolean.parseBoolean(parts[11]));
+				break;
+			}
+			case 14:{
+				name = parts[0];
+				outFile = new File(parts[6]).getCanonicalPath();
+				this.outDir = new File(this.outFile).getParent();
+				State state = null;
+				if(parts[3].equals("COMPLETE")){
+						state = State.COMPLETE;
+				}
+				else if(parts[3].equals("CHROMOSOME")) {
+						state = State.CHROMOSOME;
+					}
+				else if(parts[3].equals("SCAFFOLD")) {
+						state =State.SCAFFOLD;
+					}
+				else if(parts[3].equals("CONTIG")) {
+						state = State.CONTIG;
+					}
+				else {
+					state = State.COMPLETE;
+				}
+				setAssembly_level(state);
+				taxID = Integer.parseInt(parts[1]);
+				speciesTaxID = Integer.parseInt(parts[2]); 
+				seq_rel_date = parts[4];
+				asm_name = parts[5];
+			
+		    
+		    	setFileName(parts[6]);
+		    	time = parts[7];
+		    	representative = parts[8];
+		    	setTotalContigs(Integer.parseInt(parts[9]));    
+		    	setKeptContigs(Integer.parseInt(parts[10]));     setContainsAdapter(Boolean.parseBoolean(parts[11]));
+		    	setOnPathPercentage(Double.parseDouble(parts[12]));
+		    	setOffPathPercentage(Double.parseDouble(parts[13]));
 				break;
 			}
 		}
@@ -276,27 +318,27 @@ public class DatabaseEntry {
 	}
 	public String getIndexLine() {
 			if(time!=null)
-				return name +"\t"+taxID+"\t"+speciesTaxID+"\t"+assembly_level+"\t"+seq_rel_date+"\t"+asm_name+"\t"+getOutFile()+"\t"+time+"\t"+totalContigs+"\t"+keptContigs+"\t"+(totalContigs-keptContigs);
+				return name +"\t"+taxID+"\t"+speciesTaxID+"\t"+assembly_level+"\t"+seq_rel_date+"\t"+asm_name+"\t"+getOutFile()+"\t"+time+"\t"+representative+"\t"+totalContigs+"\t"+keptContigs+"\t"+(totalContigs-keptContigs);
 			else	
-				return name +"\t"+taxID+"\t"+speciesTaxID+"\t"+assembly_level+"\t"+seq_rel_date+"\t"+asm_name+"\t"+getOutFile()+"\t"+ZonedDateTime.now()+"\t"+totalContigs+"\t"+keptContigs+"\t"+(totalContigs-keptContigs);
+				return name +"\t"+taxID+"\t"+speciesTaxID+"\t"+assembly_level+"\t"+seq_rel_date+"\t"+asm_name+"\t"+getOutFile()+"\t"+ZonedDateTime.now()+"\t"+representative+"\t"+totalContigs+"\t"+keptContigs+"\t"+(totalContigs-keptContigs);
 	}
 	public String getAdapterContainedIndexLine() {
 		if(time!=null)
-			return name +"\t"+taxID+"\t"+speciesTaxID+"\t"+assembly_level+"\t"+seq_rel_date+"\t"+asm_name+"\t"+getOutFile()+"\t"+time+"\t"+totalContigs+"\t"+keptContigs+"\t"+(totalContigs-keptContigs)+containsAdapter;
+			return name +"\t"+taxID+"\t"+speciesTaxID+"\t"+assembly_level+"\t"+seq_rel_date+"\t"+asm_name+"\t"+getOutFile()+"\t"+time+"\t"+representative+"\t"+totalContigs+"\t"+keptContigs+"\t"+(totalContigs-keptContigs)+"\t"+containsAdapter;
 		else	
-			return name +"\t"+taxID+"\t"+speciesTaxID+"\t"+assembly_level+"\t"+seq_rel_date+"\t"+asm_name+"\t"+getOutFile()+"\t"+ZonedDateTime.now()+"\t"+totalContigs+"\t"+keptContigs+"\t"+(totalContigs-keptContigs)+containsAdapter;
+			return name +"\t"+taxID+"\t"+speciesTaxID+"\t"+assembly_level+"\t"+seq_rel_date+"\t"+asm_name+"\t"+getOutFile()+"\t"+ZonedDateTime.now()+"\t"+representative+"\t"+totalContigs+"\t"+keptContigs+"\t"+(totalContigs-keptContigs)+"\t"+containsAdapter;
 	}
 	public String getPathContainedIndexLine() {
 		if(time!=null)
-			return name +"\t"+taxID+"\t"+speciesTaxID+"\t"+assembly_level+"\t"+seq_rel_date+"\t"+asm_name+"\t"+getOutFile()+"\t"+time+"\t"+totalContigs+"\t"+keptContigs+"\t"+(totalContigs-keptContigs)+ "\t"+containsAdapter+ "\t"+ onPathPercentage+"\t"+ offPathPercentage;
+			return name +"\t"+taxID+"\t"+speciesTaxID+"\t"+assembly_level+"\t"+seq_rel_date+"\t"+asm_name+"\t"+getOutFile()+"\t"+time+"\t"+representative+"\t"+totalContigs+"\t"+keptContigs+"\t"+(totalContigs-keptContigs)+ "\t"+containsAdapter+ "\t"+ onPathPercentage+"\t"+ offPathPercentage;
 		else	
-			return name +"\t"+taxID+"\t"+speciesTaxID+"\t"+assembly_level+"\t"+seq_rel_date+"\t"+asm_name+"\t"+getOutFile()+"\t"+ZonedDateTime.now()+"\t"+totalContigs+"\t"+keptContigs+"\t"+(totalContigs-keptContigs)+"\t"+containsAdapter+ "\t"+ offPathPercentage;
+			return name +"\t"+taxID+"\t"+speciesTaxID+"\t"+assembly_level+"\t"+seq_rel_date+"\t"+asm_name+"\t"+getOutFile()+"\t"+ZonedDateTime.now()+"\t"+representative+"\t"+totalContigs+"\t"+keptContigs+"\t"+(totalContigs-keptContigs)+"\t"+containsAdapter+ "\t"+ offPathPercentage;
 	}
 	public String getCleanedIndexLine() {
 		if(time!=null)
-			return name +"\t"+taxID+"\t"+speciesTaxID+"\t"+assembly_level+"\t"+seq_rel_date+"\t"+asm_name+"\t"+getFilteredFile()+"\t"+time+"\t"+totalContigs+"\t"+keptContigs+"\t"+(totalContigs-keptContigs);
+			return name +"\t"+taxID+"\t"+speciesTaxID+"\t"+assembly_level+"\t"+seq_rel_date+"\t"+asm_name+"\t"+getFilteredFile()+"\t"+time+"\t"+representative+"\t"+totalContigs+"\t"+keptContigs+"\t"+(totalContigs-keptContigs);
 		else	
-			return name +"\t"+taxID+"\t"+speciesTaxID+"\t"+assembly_level+"\t"+seq_rel_date+"\t"+asm_name+"\t"+getFilteredFile()+"\t"+ZonedDateTime.now()+"\t"+totalContigs+"\t"+keptContigs+"\t"+(totalContigs-keptContigs);
+			return name +"\t"+taxID+"\t"+speciesTaxID+"\t"+assembly_level+"\t"+seq_rel_date+"\t"+asm_name+"\t"+getFilteredFile()+"\t"+ZonedDateTime.now()+"\t"+representative+"\t"+totalContigs+"\t"+keptContigs+"\t"+(totalContigs-keptContigs);
 }
 	public String failedState() {
 		return name + "\t" +link + "\t"+outDir;
