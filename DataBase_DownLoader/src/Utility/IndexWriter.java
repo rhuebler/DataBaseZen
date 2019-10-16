@@ -13,7 +13,7 @@ import DatabaseDownloader.DatabaseEntry;
  *
  */
 public class IndexWriter {
-	private String header = "Name\ttaxID\tspeciesTaxID\tassembly_level\tseq_rel_date\tasm_name\tFileName\tDownLoadDate\tNumberTotalContigs\tNumberKeptContigs\tNumberRemovedContigs";
+	private String header = "Name\ttaxID\tspeciesTaxID\tassembly_level\tseq_rel_date\tasm_name\tFileName\tDownLoadDate\treference\tNumberTotalContigs\tNumberKeptContigs\tNumberRemovedContigs\tAdapter";
 	private ArrayList<DatabaseEntry> references;
 	public ArrayList<DatabaseEntry> getReferences() {
 		return references;

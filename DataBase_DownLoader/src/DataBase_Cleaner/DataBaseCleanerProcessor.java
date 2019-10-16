@@ -26,7 +26,8 @@ public class DataBaseCleanerProcessor {
 	private IndexWriter writer = new IndexWriter();
 	private ArrayList<DatabaseEntry> entries;
 	private ThreadPoolExecutor executor;
-	String output;
+	private String output;
+	private String pathToMaltExAssignment;
 	public DataBaseCleanerProcessor(InputParameterProcessor inProcessor){
 		output = inProcessor.getOutDir();
 		pathToIndex = inProcessor.getPathToIndex();
@@ -43,6 +44,7 @@ public class DataBaseCleanerProcessor {
 		command.add("-outfmt");command.add("fasta");
 		command.add("-linker"); command.add(""+inProcessor.getDustLinker());
 		dustCommand = command;
+		this.pathToMaltExAssignment = inProcessor.getPathToMaltExAssignment();
 	}
 	public void progressPercentage(int remain, int total) {//Adapted from  https://stackoverflow.com/questions/852665/command-line-progress-bar-in-java
 	    if (remain > total) {
@@ -153,6 +155,11 @@ public class DataBaseCleanerProcessor {
 		entries.removeAll(entriesToRemove);
 		writer.writeDatabaseIndex(entries);
 	}
+	private void updateReferencesIndexWithPathInformation() {
+		AddPathPercentagesToIndex addPath = new  AddPathPercentagesToIndex(entries, pathToMaltExAssignment);
+		addPath.process();
+		this.entries = addPath.getUpdatedDatabaseEntries();
+	}
 	private void removeCompromisedReferences() {
 		loadDatabaseIndex();
 		ArrayList<DatabaseEntry> entriesToRemove = new ArrayList<DatabaseEntry>();
@@ -188,7 +195,8 @@ public class DataBaseCleanerProcessor {
 	
 	public void cleanCompromisedSequencesDatabase() {
 		loadDatabaseIndex();
-		System.out.println("Recreating database index");
+		System.out.println("Update database index");
+		updateReferencesIndexWithPathInformation();
 		writer.setOutput(new File(pathToIndex).getParent()+"/");
 		writer.initializeDatabaseIndex();
 		writer.writeDatabaseIndex(entries);

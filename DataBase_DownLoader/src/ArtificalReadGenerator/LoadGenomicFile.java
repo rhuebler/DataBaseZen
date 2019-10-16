@@ -32,9 +32,10 @@ public class LoadGenomicFile {
 	private ArrayList<Integer> transversions= new ArrayList<Integer>();
 	private ArrayList<Integer> transitions= new ArrayList<Integer>();
 	private ArrayList<Integer> lengths = new ArrayList<Integer>();
+	private String outDir;
 	private boolean mutations = false;
 	public LoadGenomicFile(DatabaseEntry entry, double maxMutationRate, int maximumLength, int minimumLength, double transversionRate, 
-			double transitionRate, int numberOfReads, SimulateFormat format){
+			double transitionRate, int numberOfReads, SimulateFormat format, String outDir){
 		maximumrate=maxMutationRate;
 		this.minimumLength = minimumLength;
 		this.maximumLength = maximumLength;
@@ -45,6 +46,7 @@ public class LoadGenomicFile {
 		this.entry = entry;
 		String[]parts =entry.getOutFile().split("/");
 		referenceName = parts[parts.length-1];
+		this.outDir = outDir;
 	}
 	private String mutateRead(String read) {// I want to save drawing some random numbers therefore we choose the number of positions mutate than the postitions and lastly the mutation to aplly
 		 int transitions = 0;
@@ -239,16 +241,19 @@ public class LoadGenomicFile {
 		        reader.close();
 		        isr.close();
 		        zip.close();
+		    	System.out.println("loaded file "+ getReferenceName());
 		    } catch (FileNotFoundException e) {
 		        System.out.println(e);
 		    } catch (IOException e) {
 		        System.out.println(e);
 		    }
-		System.out.println("loaded file");
+	
 		int referenceLength = reference.length();
 		int k = 0;
-		System.out.println("Generate reads");
+		//System.out.println("Generate reads");
+		
 		if(mutations) {
+			System.out.println("Generate pseudo reads with mutations");
 			while(k<numberOfReads) {// relativly fast
 				int randomLength = ThreadLocalRandom.current().nextInt(minimumLength, maximumLength);
 				int position =  ThreadLocalRandom.current().nextInt(0, referenceLength - randomLength);
@@ -272,6 +277,7 @@ public class LoadGenomicFile {
 				k++;
 			}
 		}else {
+			System.out.println("Generate pseudo reads without mutations");
 			while(k<numberOfReads) {// relativly fast
 				int randomLength = ThreadLocalRandom.current().nextInt(minimumLength, maximumLength);
 				int position =  ThreadLocalRandom.current().nextInt(0, referenceLength - randomLength);
@@ -291,6 +297,7 @@ public class LoadGenomicFile {
 						quality +="~";
 					simulatedReads.add(quality);
 				}
+				k++;
 			}
 		}
 //		System.out.println("Generated Reads");
@@ -308,8 +315,8 @@ public class LoadGenomicFile {
 				f="fasta";
 			else if(format == SimulateFormat.FASTQ)
 				f="fastq";
-			Path file = Paths.get(entry.getOutFile()+".simulated."+f);
-			System.out.println(getReferenceName()+".simulated."+f);
+			Path file = Paths.get(outDir+getReferenceName()+".simulated."+f);
+			System.out.println(outDir+getReferenceName()+".simulated."+f);
 			//System.out.println(file.getFileName()+" "+simulatedReads.size());
 			Files.write(file, simulatedReads, Charset.forName("UTF-8"));
 		}catch(IOException io){

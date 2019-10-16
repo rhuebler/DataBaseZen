@@ -62,8 +62,12 @@ public class InputParameterProcessor {
 	private int lengthTreshold = 100000;
 	private boolean ignoreHumanAssemblies =false;
 	private String pathToXLSX = "/Users/huebler/Desktop/Breitwieser_2019_GenomeRes_RefSeqHumanContaminationContigs/Supplemental_Table_S2.xlsx";
+	private String pathToMaltExAssignment;
 	//cite [1] Morgulis A, Gertz EM, Schaffer AA, Agarwala R. A Fast and Symmetric DUST Implementation to Mask Low-Complexity DNA Sequences. for dustMasker part
 	// constructor
+	public String getPathToMaltExAssignment() {
+		return this.pathToMaltExAssignment;
+	}
 	public String getPathToXLSXFiles() {
 		return pathToXLSX;
 	}
@@ -188,7 +192,7 @@ public class InputParameterProcessor {
     	 CommandLine commandLine;
     	 	// Short Flags Are necessary parameters that are necessary for any run
     	 	// here we describe all CLI options
-    	    Option option_Database = Option.builder("r").longOpt("references").argName("String").hasArgs().desc("Specify where to locate directory with references downloaded outside from this program").build();
+    	   // Option option_Database = Option.builder("r").longOpt("references").argName("String").hasArgs().desc("Specify where to locate directory with references downloaded outside from this program").build();
     	    Option option_Output = Option.builder("o").longOpt("output").argName("String").hasArg().desc("Specify out directory").build();
     	    Option optionMode = Option.builder("m").longOpt("mode").argName("String").hasArg().desc("full, download, create, update").build();
     	    Option optionPhylum = Option.builder("p").longOpt("phylum").argName("String").hasArg().desc("fullNT, bacteria, viral, eukaryotes, adapter_clean, taxonomic_clean").build();
@@ -202,7 +206,7 @@ public class InputParameterProcessor {
     	    Option optionTransversionRate = Option.builder("").longOpt("transversionRate").optionalArg(true).desc("Set transversion rate").build();
     	    Option optionTransRate = Option.builder("").longOpt("transitionRate").optionalArg(true).desc("Set transition Rate").build();
     	    Option optionNumReads = Option.builder("").longOpt("numReads").hasArg().optionalArg(true).desc("Set Number of Reads").build();
-    	    Option optionFormat = Option.builder("").longOpt("format").optionalArg(true).desc("output either fastq or fasta format").build();
+    	    Option optionFormat = Option.builder("").longOpt("format").hasArg().optionalArg(true).desc("output either fastq or fasta format").build();
     	    Option optionThreads = Option.builder("").longOpt("threads").hasArg().optionalArg(true).desc("get number of threads for read creation").build();
     	    Option optionDustLevel = Option.builder("").longOpt("dustLevel").hasArg().optionalArg(true).desc("Set Level parameter for DustMasker").build();
     	    Option optionDustWindow = Option.builder("").longOpt("dustWindow").optionalArg(true).desc("Set window size for DustMasker").build();
@@ -211,6 +215,7 @@ public class InputParameterProcessor {
     	    Option optionLengthThreshold = Option.builder("l").longOpt("length").hasArg().optionalArg(true).desc("Set length threshold for assemblies exclude parts of assemblies that are shorter").build();
     	    Option optionKeywordRemoval = Option.builder("k").longOpt("keywordremoval").optionalArg(true).desc("Key word removal, exclude entries that contain uncultured, co-culture species, synthetic").build();
     	    Option optionIngoreContaminatedAssemblies = Option.builder("c").longOpt("contaminatedremoval").optionalArg(true).desc("Remove human contaminated reference sequences").build();
+    	    Option optionPathToMaltExAssignment = Option.builder().longOpt("pathToMaltExAssignment").optionalArg(true).desc("Specify path to MaltExtract read assignment File").build();
     	    Options options = new Options();
     	    
     	    // add all parameters to the parser
@@ -220,7 +225,7 @@ public class InputParameterProcessor {
     	    options.addOption(optionState);
     	    options.addOption(optionTaxonList);
     	    options.addOption(optionPhylum);
-    	    options.addOption(option_Database);
+    	  //  options.addOption(option_Database);
     	    options.addOption(option_Output);
     	    options.addOption(optionMode);
     	    options.addOption(option_Help);
@@ -238,6 +243,7 @@ public class InputParameterProcessor {
     	    options.addOption(optionLengthThreshold);
     	    options.addOption(optionKeywordRemoval);
     	    options.addOption(optionIngoreContaminatedAssemblies);
+    	    options.addOption(optionPathToMaltExAssignment);
     	    //parse arguments into the comandline parser
     	        commandLine = parser.parse(options, parameters);
  
@@ -462,15 +468,12 @@ public class InputParameterProcessor {
     							System.exit(1);
     	        			   }
     	        		   }   
-	    	        		if (commandLine.hasOption("references")) {
-	    	        			String arg  = commandLine.getOptionValue("references");
-	    	        			File inFile = new File(arg);
-	    	        			for(String name : inFile.list())//if file ends with RMA6 or is as a soft link at to files
-	            					if(name.endsWith("fa")||name.endsWith("fq")||name.endsWith("fasta")||name.endsWith("fastq")||name.endsWith(".gz")) {
-	            						referenceFiles.add(inFile.getPath()+"/" + name);
-	            					}
-	    	        		}
-	    	        	    
+    	        		   if (commandLine.hasOption("index")) {
+   	        			    pathToIndex = commandLine.getOptionValue("index");
+   	        				} else {
+   	        					System.err.println("No database index provided!!! Cannot create reads!!!");
+   	        					System.exit(1);
+   	        				}     
 	    	        	break;
     	        	}
     	        	case UPDATE:{
@@ -535,6 +538,12 @@ public class InputParameterProcessor {
 	        			    pathToIndex = commandLine.getOptionValue("index");
 	        				} else {
 	        					System.err.println("No database index provided!!! Cannot clean DB!!!");
+	        					System.exit(1);
+	        				}  
+    	        		if(commandLine.hasOption("pathToMaltExAssignment")) {
+    	        			pathToMaltExAssignment = commandLine.getOptionValue("pathToMaltExAssignment");
+	        				} else {
+	        					System.err.println("No MaltExtractAssignment file provided!!! Cannot clean DB!!!");
 	        					System.exit(1);
 	        				}  
     	        		
