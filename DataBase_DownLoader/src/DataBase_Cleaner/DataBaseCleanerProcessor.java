@@ -16,6 +16,7 @@ import DatabaseDownloader.DatabaseEntry;
 import DatabaseDownloader.DownSamplerFromIndex;
 import Utility.IndexWriter;
 import Utility.ProcessExecutor;
+import Utility.State;
 
 public class DataBaseCleanerProcessor {
 	private double contamaninationThreshold = 0.05;
@@ -28,10 +29,12 @@ public class DataBaseCleanerProcessor {
 	private ThreadPoolExecutor executor;
 	private String output;
 	private String pathToMaltExAssignment;
+	private int lengthThreshhold=10000;
 	public DataBaseCleanerProcessor(InputParameterProcessor inProcessor){
 		output = inProcessor.getOutDir();
 		pathToIndex = inProcessor.getPathToIndex();
 		threads = inProcessor.getNumberOfThreads();
+		this.lengthThreshhold=inProcessor.getLengthTreshold();
 		ArrayList<String> command  = new ArrayList<String>();
 		command.add("gzcat") ;
 		command.add("placeholder");command.add("|");
@@ -175,6 +178,53 @@ public class DataBaseCleanerProcessor {
 		entries.removeAll(entriesToRemove);
 		writer.writeDatabaseIndex(entries);
 	}
+	
+	public void contigLengthFiltering() {
+		loadDatabaseIndex();
+		System.out.println("Recreating database index");
+		writer.setOutput(new File(pathToIndex).getParent()+"/");
+		writer.initializeDatabaseIndex();
+		writer.writeDatabaseIndex(entries);
+		executor=(ThreadPoolExecutor) Executors.newFixedThreadPool(threads);
+		ArrayList<Future<ReferenceLengthFilter>> futureList = new ArrayList<Future<ReferenceLengthFilter>>();
+		ArrayList<DatabaseEntry> entriesToUpdate = new ArrayList<DatabaseEntry>();
+		int i=1;
+		for(DatabaseEntry entry : entries) {
+			if(entry.getAssembly_level()!=State.COMPLETE) {
+				if(entry.getTotalContigs()==0) {
+					ConcurrentReferenceLengthFilter task = new ConcurrentReferenceLengthFilter(entry,lengthThreshhold);
+					Future<ReferenceLengthFilter> future = executor.submit(task);
+					futureList.add(future);
+				}else {
+					entriesToUpdate.add(entry);
+				}
+			}else {
+					entriesToUpdate.add(entry);
+			}
+				
+			progressPercentage(i,entries.size());
+		}
+		executor.shutdown();
+		for(Future<ReferenceLengthFilter> future : futureList) {
+			try {
+				ReferenceLengthFilter filter = future.get();
+				if(filter.getResult()) {
+					entriesToUpdate.add(filter.getEntry());
+				}
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (ExecutionException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+		this.entries = entriesToUpdate;
+		System.out.println("Updating Index with Reference Information");
+		writer.initializeDatabaseIndex();
+		writer.writeDatabaseIndex(entries);
+	}
+	
 	public void removeAdapterContaminatedSequences( ) {
 		loadDatabaseIndex();
 		System.out.println("Recreating database index");

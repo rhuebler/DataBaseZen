@@ -1,5 +1,6 @@
 package DatabaseDownloader;
 
+import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -56,70 +57,80 @@ public class EntryLoader {
 	public void clearFailedReferences() {
 		failedReferences.clear();
 	}
-	private boolean downLoadAssembly(DatabaseEntry entry) {
+	public boolean downLoadAssembly(DatabaseEntry entry) {
 		String url = entry.getLink();
 		String fileName = entry.getOutFile();
+		boolean result = true;
 		ArrayList<String> output = new  ArrayList<String>();
-		boolean result = false;
-		try{
+		try {
 			URLConnection conn = new URL(url).openConnection();
 			 conn.setConnectTimeout(90*1000);
 			 conn.setReadTimeout(90*1000);
-			   try (InputStream in = conn.getInputStream()) {
-				   InputStream gzipStream = new GZIPInputStream(in);
-				   Reader decoder = new InputStreamReader(gzipStream);
-				   BufferedReader buffered = new BufferedReader(decoder);
-				   String line;
-				   int length=0;
-				   String header="";
-				   int totalNumber = 0;
-				   int numberKept = 0;
-				   ArrayList<String> contig = new  ArrayList<String>();
-				   while((line = buffered.readLine())!=null) {
-					   if(line.startsWith(">")) {
-						   totalNumber++;
-						   if(length >=lengthThreshold) {
-							   output.add(header);
-							   output.addAll(contig);
-							   numberKept++;
-							   length = 0;
-							   contig.clear();
-						   }
-						   header = line;
-					   }else {
-						   length += line.length();
-						   contig.add(line);
+		   try (InputStream in = conn.getInputStream()) {
+			   InputStream gzipStream = new GZIPInputStream(in);
+			   Reader decoder = new InputStreamReader(gzipStream);
+			   BufferedReader buffered = new BufferedReader(decoder);
+			   String line;
+			   int length=0;
+			   String header="";
+			   int totalNumber = 0;
+			   int numberKept = 0;
+			   ArrayList<String> contig = new  ArrayList<String>();
+			   while((line = buffered.readLine())!=null) {
+				   //System.out.println(line);
+				   if(line.startsWith(">")) {
+					   totalNumber++;
+					   if(length >=lengthThreshold) {
+						   output.add(header);
+						   output.addAll(contig);
+						   numberKept++;
 					   }
-				   } 
-				   buffered.close();
-				   decoder.close();
-				   gzipStream.close();
+					   length = 0;
+					   contig.clear();
+					   header = line;
+				   }else {
+					   length += line.length();
+					   contig.add(line);
+				   }
+			   } 
+			   if(length >=lengthThreshold) {
+				   output.add(header);
+				   output.addAll(contig);
+				   numberKept++;
+			   }
+			   buffered.close();
+			   decoder.close();
+			   gzipStream.close();
 				   entry.setTotalContigs(totalNumber);
 				   entry.setKeptContigs(numberKept);
-				   references.add(entry);
+			
 				  
 			   }catch(Exception e) {
-				   	failedReferences.add(entry);
+				e.printStackTrace();
 			    }
 		}catch(IOException io) {
-			failedReferences.add(entry);
 			io.printStackTrace();
 		}	
 		if(output.size()>0) {
-		 try (   FileOutputStream outputStream = new FileOutputStream(fileName, false);
-	                Writer writer = new OutputStreamWriter(new GZIPOutputStream(outputStream), "UTF-8")) {
-			 for(String s : output) {
-	            writer.write(s);
-			 }
+
+			 try (   FileOutputStream outputStream = new FileOutputStream(fileName, false);
+					 BufferedOutputStream buffered =  new BufferedOutputStream(outputStream);
+		             Writer writer = new OutputStreamWriter(new GZIPOutputStream(buffered), "UTF-8")) {
+				 	String line ="";
+				 	for(String s : output) {
+				 		line+=s+"\n";
+				 	}
+			
+		            writer.write(line);
 	        }catch(IOException io) {
-	        	failedReferences.add(entry);
 	        	System.err.println("FileName "+fileName+"\n"+"URL: "+url);
 				io.printStackTrace();
 			}
 		 result = true;
 		}
+		output.clear();
 		return result;
-	}
+	}	
 	private boolean downLoadCompleteReference(DatabaseEntry entry) {
 		String url = entry.getLink();
 		String fileName = entry.getOutFile();
@@ -151,14 +162,15 @@ public class EntryLoader {
 			System.err.println(url);
 		}
 		if( contigLengthFiltering == true) {
-			switch(entry.getAssembly_level()) {
-				case COMPLETE:
-					result = downLoadCompleteReference(entry);
-					break;
-				default:
-					result = downLoadAssembly(entry);
-				break;	
-			}
+//			switch(entry.getAssembly_level()) {
+//				case COMPLETE:
+//					result = downLoadCompleteReference(entry);
+//					break;
+//				default:
+//					result = downLoadAssembly(entry);
+//				break;	
+			result = downLoadCompleteReference(entry);
+//			}
 		}else {
 		   result = downLoadCompleteReference(entry);
 		}

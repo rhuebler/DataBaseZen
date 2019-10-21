@@ -15,6 +15,8 @@ public class AdapterSpotter {
 	 private ArrayList<String> adapters = new  ArrayList<String>();
 	 private boolean containsAdapter = false;
 	 private DatabaseEntry entry; 
+	 private int occurance = 0;
+	
 	 public AdapterSpotter() {
 		 ArrayList<String> adapters = new  ArrayList<String>();
 			adapters.add("AGATCGGAAGAG");
@@ -24,6 +26,9 @@ public class AdapterSpotter {
 			adapters.add("ACGCCTTGGCCGT");
 			this.adapters=adapters;
 	 }
+	public int getOccurance() {
+		return this.occurance;
+	}
 	public boolean isAdapterContained() {
 		return this.containsAdapter;
 	}
@@ -52,11 +57,15 @@ public class AdapterSpotter {
 		    }
 		 for(String adapter:adapters) {
 			 if(sequence.contains(adapter)) {
-				 containsAdapter = true;
+				String [] parts = sequence.split(adapter);
+				occurance+= parts.length-1;
+				containsAdapter = true;
 			 }
 		 }
 		this.containsAdapter = containsAdapter;
 		this.entry.setContainsAdapter(containsAdapter);
+		this.entry.setAdapterOccurance(occurance);
+		
 	}
 	public void processAsParts(DatabaseEntry databaseEntry) {
 		this.entry =databaseEntry;

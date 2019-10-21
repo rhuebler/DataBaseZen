@@ -72,6 +72,7 @@ public class test {
 			io.printStackTrace();
 		}	
 		String fileName = "/Users/huebler/Desktop/Zunongwangia mangrovi strain=DSM 24499_IMG-taxon 2622736505 annotated assembly_1334022_2.fna.gz";
+		
 		if(output.size()>0) {
 
 			 try (   FileOutputStream outputStream = new FileOutputStream(fileName, false);
@@ -96,24 +97,30 @@ public class test {
 	
 	public static void main(String[] args) {
 		// TODO Auto-generated method stub
-		String path ="/Users/huebler/Desktop/Zunongwangia mangrovi strain=DSM 24499_IMG-taxon 2622736505 annotated assembly_1334022_2.fna.gz";
-				
+		String path = "/Users/huebler/Desktop/Zunongwangia mangrovi strain=DSM 24499_IMG-taxon 2622736505 annotated assembly_1334022_2.fna.gz";
+		//path= "/Users/huebler/Desktop/ASM187452v1_2125990.fna.gz";		
 		String content;
 		String reference="";
 		
 		 try {                 
 			 	String url = "ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/900/112/105/GCA_900112105.1_IMG-taxon_2622736505_annotated_assembly/GCA_900112105.1_IMG-taxon_2622736505_annotated_assembly_cds_from_genomic.fna.gz";	
-			 	downLoadAssembly(url, 1000);
+			 	//downLoadAssembly(url, 1000);
 
 			 	GZIPInputStream zip = new GZIPInputStream(new FileInputStream(path));            
 		        InputStreamReader isr = new InputStreamReader(zip, "UTF8");
 		        BufferedReader reader = new BufferedReader(isr);
 		        while ((content = reader.readLine()) != null) {
+		        	if(content.startsWith(">"))//ignore header
+		        	{
+		        		
+		        		reference+=content;
+		        	}
 		        	if(!content.startsWith(">"))//ignore header
 		        	{
 		        		
 		        		reference+=content;
 		        	}
+		        	System.out.println(content);
 		        }
 		        reader.close();
 		        isr.close();

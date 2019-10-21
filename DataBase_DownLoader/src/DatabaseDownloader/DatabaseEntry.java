@@ -30,6 +30,7 @@ public class DatabaseEntry {
 	private String time;
 	private double qualityValue;
 	private boolean containsAdapter = false;
+	private int adapterOccurance = 0;
 	private double onPathPercentage = 0.0;
 	private double offPathPercentage = 0.0;
 	public String getAssembly_accession() {
@@ -90,7 +91,7 @@ public class DatabaseEntry {
 		this.setSpeciesTaxID(speciesTaxID);
 		this.setSeq_rel_date(seq_rel_date);
 		this.setAsm_name(asm_name);
-		this.outFile = outDir+name+"_"+asm_name+"_"+taxID+".fna.gz";
+		this.outFile = outDir+getName()+"_"+asm_name+"_"+taxID+".fna.gz";
 		this.representative = representative;
 	}
 	public DatabaseEntry(String line) throws IOException {
@@ -196,6 +197,41 @@ public class DatabaseEntry {
 		    	setContainsAdapter(Boolean.parseBoolean(parts[11]));
 				break;
 			}
+			case 13:{
+				name = parts[0];
+				outFile = new File(parts[6]).getCanonicalPath();
+				this.outDir = new File(this.outFile).getParent();
+				State state = null;
+				if(parts[3].equals("COMPLETE")){
+						state = State.COMPLETE;
+				}
+				else if(parts[3].equals("CHROMOSOME")) {
+						state = State.CHROMOSOME;
+					}
+				else if(parts[3].equals("SCAFFOLD")) {
+						state =State.SCAFFOLD;
+					}
+				else if(parts[3].equals("CONTIG")) {
+						state = State.CONTIG;
+					}
+				else {
+					state = State.COMPLETE;
+				}
+				setAssembly_level(state);
+				taxID = Integer.parseInt(parts[1]);
+				speciesTaxID = Integer.parseInt(parts[2]); 
+				seq_rel_date = parts[4];
+				asm_name = parts[5];
+				
+		    	setFileName(parts[6]);
+		    	time = parts[7];
+		    	representative = parts[8];
+		    	setTotalContigs(Integer.parseInt(parts[9]));
+		    	setKeptContigs(Integer.parseInt(parts[10]));
+		    	setContainsAdapter(Boolean.parseBoolean(parts[11]));
+		    	setAdapterOccurance(Integer.parseInt(parts[12]));
+				break;
+			}
 			case 14:{
 				name = parts[0];
 				outFile = new File(parts[6]).getCanonicalPath();
@@ -227,9 +263,48 @@ public class DatabaseEntry {
 		    	time = parts[7];
 		    	representative = parts[8];
 		    	setTotalContigs(Integer.parseInt(parts[9]));    
-		    	setKeptContigs(Integer.parseInt(parts[10]));     setContainsAdapter(Boolean.parseBoolean(parts[11]));
+		    	setKeptContigs(Integer.parseInt(parts[10]));     
+		    	setContainsAdapter(Boolean.parseBoolean(parts[11]));
 		    	setOnPathPercentage(Double.parseDouble(parts[12]));
 		    	setOffPathPercentage(Double.parseDouble(parts[13]));
+				break;
+			}
+			case 15:{
+				name = parts[0];
+				outFile = new File(parts[6]).getCanonicalPath();
+				this.outDir = new File(this.outFile).getParent();
+				State state = null;
+				if(parts[3].equals("COMPLETE")){
+						state = State.COMPLETE;
+				}
+				else if(parts[3].equals("CHROMOSOME")) {
+						state = State.CHROMOSOME;
+					}
+				else if(parts[3].equals("SCAFFOLD")) {
+						state =State.SCAFFOLD;
+					}
+				else if(parts[3].equals("CONTIG")) {
+						state = State.CONTIG;
+					}
+				else {
+					state = State.COMPLETE;
+				}
+				setAssembly_level(state);
+				taxID = Integer.parseInt(parts[1]);
+				speciesTaxID = Integer.parseInt(parts[2]); 
+				seq_rel_date = parts[4];
+				asm_name = parts[5];
+			
+		    
+		    	setFileName(parts[6]);
+		    	time = parts[7];
+		    	representative = parts[8];
+		    	setTotalContigs(Integer.parseInt(parts[9]));    
+		    	setKeptContigs(Integer.parseInt(parts[10]));     
+		    	setContainsAdapter(Boolean.parseBoolean(parts[11]));
+		    	setAdapterOccurance(Integer.parseInt(parts[12]));
+		    	setOnPathPercentage(Double.parseDouble(parts[13]));
+		    	setOffPathPercentage(Double.parseDouble(parts[14]));
 				break;
 			}
 		}
@@ -324,15 +399,15 @@ public class DatabaseEntry {
 	}
 	public String getAdapterContainedIndexLine() {
 		if(time!=null)
-			return name +"\t"+taxID+"\t"+speciesTaxID+"\t"+assembly_level+"\t"+seq_rel_date+"\t"+asm_name+"\t"+getOutFile()+"\t"+time+"\t"+representative+"\t"+totalContigs+"\t"+keptContigs+"\t"+(totalContigs-keptContigs)+"\t"+containsAdapter;
+			return name +"\t"+taxID+"\t"+speciesTaxID+"\t"+assembly_level+"\t"+seq_rel_date+"\t"+asm_name+"\t"+getOutFile()+"\t"+time+"\t"+representative+"\t"+totalContigs+"\t"+keptContigs+"\t"+(totalContigs-keptContigs)+"\t"+containsAdapter+"\t"+ adapterOccurance;
 		else	
-			return name +"\t"+taxID+"\t"+speciesTaxID+"\t"+assembly_level+"\t"+seq_rel_date+"\t"+asm_name+"\t"+getOutFile()+"\t"+ZonedDateTime.now()+"\t"+representative+"\t"+totalContigs+"\t"+keptContigs+"\t"+(totalContigs-keptContigs)+"\t"+containsAdapter;
+			return name +"\t"+taxID+"\t"+speciesTaxID+"\t"+assembly_level+"\t"+seq_rel_date+"\t"+asm_name+"\t"+getOutFile()+"\t"+ZonedDateTime.now()+"\t"+representative+"\t"+totalContigs+"\t"+keptContigs+"\t"+(totalContigs-keptContigs)+"\t"+containsAdapter+"\t"+ adapterOccurance;
 	}
 	public String getPathContainedIndexLine() {
 		if(time!=null)
-			return name +"\t"+taxID+"\t"+speciesTaxID+"\t"+assembly_level+"\t"+seq_rel_date+"\t"+asm_name+"\t"+getOutFile()+"\t"+time+"\t"+representative+"\t"+totalContigs+"\t"+keptContigs+"\t"+(totalContigs-keptContigs)+ "\t"+containsAdapter+ "\t"+ onPathPercentage+"\t"+ offPathPercentage;
+			return name +"\t"+taxID+"\t"+speciesTaxID+"\t"+assembly_level+"\t"+seq_rel_date+"\t"+asm_name+"\t"+getOutFile()+"\t"+time+"\t"+representative+"\t"+totalContigs+"\t"+keptContigs+"\t"+(totalContigs-keptContigs)+ "\t"+containsAdapter+ "\t"+ adapterOccurance +"\t"+ onPathPercentage+"\t"+ offPathPercentage;
 		else	
-			return name +"\t"+taxID+"\t"+speciesTaxID+"\t"+assembly_level+"\t"+seq_rel_date+"\t"+asm_name+"\t"+getOutFile()+"\t"+ZonedDateTime.now()+"\t"+representative+"\t"+totalContigs+"\t"+keptContigs+"\t"+(totalContigs-keptContigs)+"\t"+containsAdapter+ "\t"+ offPathPercentage;
+			return name +"\t"+taxID+"\t"+speciesTaxID+"\t"+assembly_level+"\t"+seq_rel_date+"\t"+asm_name+"\t"+getOutFile()+"\t"+ZonedDateTime.now()+"\t"+representative+"\t"+totalContigs+"\t"+keptContigs+"\t"+(totalContigs-keptContigs)+"\t"+containsAdapter+ "\t"+ adapterOccurance +"\t"+ onPathPercentage+"\t"+ offPathPercentage;
 	}
 	public String getCleanedIndexLine() {
 		if(time!=null)
@@ -354,5 +429,11 @@ public class DatabaseEntry {
 	}
 	public void setKeptContigs(int keptContigs) {
 		this.keptContigs = keptContigs;
+	}
+	public int getAdapterOccurance() {
+		return adapterOccurance;
+	}
+	public void setAdapterOccurance(int adapterOccurance) {
+		this.adapterOccurance = adapterOccurance;
 	}
 }

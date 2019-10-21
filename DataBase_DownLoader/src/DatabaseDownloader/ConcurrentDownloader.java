@@ -21,16 +21,18 @@ public class ConcurrentDownloader implements Callable<DownLoader> {
 	@Override
 	public DownLoader call() throws Exception {
 		DownLoader loader =  new DownLoader();
-		switch(entry.getAssembly_level()) {
-			case COMPLETE:{
-				loader.downLoadCompleteReference(entry);
-				break;
-			}
-			default:{
-				loader.downLoadAssembly(entry, maxLength);
-				break;
-			}
-		}
+//		switch(entry.getAssembly_level()) {
+//			case COMPLETE:{
+//				loader.downLoadCompleteReference(entry);
+//				break;
+//			}
+//			default:{
+//				
+//				loader.downLoadAssembly(entry, maxLength);
+//				break;
+//			}
+//		}
+		loader.downLoadCompleteReference(entry);
 		return loader;
 	}
 }

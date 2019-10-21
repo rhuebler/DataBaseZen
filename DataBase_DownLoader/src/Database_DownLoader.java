@@ -18,13 +18,15 @@ public class Database_DownLoader {
 				default:{
 					DatabaseProcessor processor = new DatabaseProcessor(inProcessor);
 					processor.process();
-					processor.loadDatabase();
+					//processor.loadDatabase();
+					DataBaseCleanerProcessor cleaner = new DataBaseCleanerProcessor(inProcessor);
+					cleaner.contigLengthFiltering();
 					break; 
 				}
 				case BOTH:{
 					DatabaseProcessor processor = new DatabaseProcessor(inProcessor);
 					processor.process();
-					processor.loadDatabase();
+					//processor.loadDatabase();
 					ArtificalDataControler controler = new ArtificalDataControler(inProcessor,processor.getIndex());
 					controler.process();
 					break;
@@ -32,11 +34,13 @@ public class Database_DownLoader {
 				case DOWNLOAD:{
 					DatabaseProcessor processor = new DatabaseProcessor(inProcessor);
 					processor.process();
-					processor.loadDatabase();
+					//processor.loadDatabase();
 					break;
 					}
 				case CLEAN_ADAPTERS:{
+					
 					DataBaseCleanerProcessor cleaner = new DataBaseCleanerProcessor(inProcessor);
+					//cleaner.contigLengthFiltering();
 					cleaner.removeAdapterContaminatedSequences();
 					break;
 				}
@@ -53,6 +57,9 @@ public class Database_DownLoader {
 					DatabaseProcessor processor = new DatabaseProcessor(inProcessor);
 					processor.process();
 					processor.updateDatabase();
+					
+					DataBaseCleanerProcessor cleaner = new DataBaseCleanerProcessor(inProcessor);
+					cleaner.contigLengthFiltering();
 					break;
 					}	
 			}

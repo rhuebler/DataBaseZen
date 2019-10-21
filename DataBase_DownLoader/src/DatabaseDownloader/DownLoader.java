@@ -122,5 +122,6 @@ public class DownLoader {
 				}
 			 result = true;
 			}
+			output.clear();
 		}	
 }

@@ -179,15 +179,15 @@ public class DatabaseProcessor {
 		if(contaminatedRemoval) {
 			getter.removeHumanContaminatedAssemblies(humanContaminatedAssemblies);
 		}
-		if(threads>1) {
+		if (threads>1)
 			loadDatabaseConcurrently();
-		}else {
+		else
 			loadDatabase();
-		}
 	}
 	public ArrayList<DatabaseEntry> getEntries(){
 		return getter.getDatabaseEntries();
 	}
+	
 	public void loadDatabase() {
 		new File(output).mkdirs();
 		EntryLoader loader = new EntryLoader() ;
@@ -238,16 +238,16 @@ public class DatabaseProcessor {
 		EntryLoader loader = new EntryLoader() ;
 		loader.setCleanDB(cleanDatabase);
 		loader.setLengthThreshold(length);
-		loader.intiliazeExecutor(threads);
+		loader.intiliazeExecutor(8);
 		writer.setOutput(output);
 		writer.initializeDatabaseIndex();
 		System.out.println("Downloading Entries Concurrently");
-		int i=0;
+		int i=1;
 		for(DatabaseEntry entry : getEntries()) {
 			try{
-				boolean result = loader.download(entry);
-				if(result)
-					writer.appendEntryToDatabaseIndex(entry);
+				loader.downloadConcurrently(entry);
+//				if(result)
+//					writer.appendEntryToDatabaseIndex(entry);
 				progressPercentage(i, getEntries().size());
 				i++;
 			}catch(Exception e) {
@@ -261,7 +261,7 @@ public class DatabaseProcessor {
 		
 		//if we fail to download something we collect those entries and try again at the end
 		if(loader.getFailedReferences().size()>0) {
-			i=0;
+			i=1;
 			loader.intiliazeExecutor(threads);
 			ArrayList<DatabaseEntry> list = loader.getFailedReferences();
 			loader.clearFailedReferences();
@@ -326,9 +326,9 @@ public class DatabaseProcessor {
 			new File(output).mkdir();
 			EntryLoader loader = new EntryLoader() ;
 			loader.setCleanDB(cleanDatabase);
-			loader.intiliazeExecutor(threads);
+			loader.intiliazeExecutor(8);
 			System.out.println("Downloading Entries Concurrently");
-			int i=0;
+			int i=1;
 			for(DatabaseEntry entry : entriesToUpdate) {
 				try{
 					loader.downloadConcurrently(entry);
@@ -344,7 +344,7 @@ public class DatabaseProcessor {
 		
 		//if we fail to download something we collect those entries and try again at the end
 		if(loader.getFailedReferences().size()>0) {
-			i=0;
+			i=1;
 			loader.intiliazeExecutor(threads);
 			ArrayList<DatabaseEntry> list = loader.getFailedReferences();
 			loader.clearFailedReferences();
