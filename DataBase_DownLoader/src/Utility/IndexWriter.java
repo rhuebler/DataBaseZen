@@ -13,7 +13,7 @@ import DatabaseDownloader.DatabaseEntry;
  *
  */
 public class IndexWriter {
-	private String header = "Name\ttaxID\tspeciesTaxID\tassembly_level\tseq_rel_date\tasm_name\tFileName\tDownLoadDate\treference\tNumberTotalContigs\tNumberKeptContigs\tNumberRemovedContigs\tAdapter";
+	private String header = "Name\ttaxID\tspeciesTaxID\tassembly_level\tseq_rel_date\tasm_name\tFileName\tDownLoadDate\treference\tNumberTotalContigs\tNumberKeptContigs\tNumberRemovedContigs\tAdapter\tAdapterOccurance";
 	private ArrayList<DatabaseEntry> references;
 	public ArrayList<DatabaseEntry> getReferences() {
 		return references;
@@ -107,21 +107,36 @@ public class IndexWriter {
 				}
 			}
 		}
-	public void writeDatabaseAdapterIndex(ArrayList<DatabaseEntry> entriesToIndex) {
-		if(!entriesToIndex.isEmpty()) {
-			 try ( BufferedWriter br  = new BufferedWriter( new FileWriter(new File(output+"index.txt"),false)))
-			 {
-				br.write(header);
-				br.newLine();
-				 for(DatabaseEntry entry : entriesToIndex) {
-						br.write(entry.getAdapterContainedIndexLine());
-						br.newLine();
-				 }
-		        }catch(IOException io) {
-					io.printStackTrace();
-				}
-			}
-		}
+//	public void writeDatabaseTaxonomicIndex(ArrayList<DatabaseEntry> entriesToIndex) {
+//		if(!entriesToIndex.isEmpty()) {
+//			 try ( BufferedWriter br  = new BufferedWriter( new FileWriter(new File(output+"index.txt"),false)))
+//			 {
+//				br.write(header);
+//				br.newLine();
+//				 for(DatabaseEntry entry : entriesToIndex) {
+//						br.write(entry.getPathContaminedIndexLine());
+//						br.newLine();
+//				 }
+//		        }catch(IOException io) {
+//					io.printStackTrace();
+//				}
+//			}
+//		}
+//	public void writeDatabaseAdapterIndex(ArrayList<DatabaseEntry> entriesToIndex) {
+//		if(!entriesToIndex.isEmpty()) {
+//			 try ( BufferedWriter br  = new BufferedWriter( new FileWriter(new File(output+"index.txt"),false)))
+//			 {
+//				br.write(header);
+//				br.newLine();
+//				 for(DatabaseEntry entry : entriesToIndex) {
+//						br.write(entry.getAdapterContainedIndexLine());
+//						br.newLine();
+//				 }
+//		        }catch(IOException io) {
+//					io.printStackTrace();
+//				}
+//			}
+//		}
 	public void writeCleanDatabaseIndex(ArrayList<DatabaseEntry> entriesToIndex) {
 		if(!entriesToIndex.isEmpty()) {
 			 try ( BufferedWriter br  = new BufferedWriter( new FileWriter(new File(output+"index.txt"),false)))

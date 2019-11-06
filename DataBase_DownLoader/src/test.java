@@ -3,6 +3,7 @@ import java.io.BufferedReader;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -12,12 +13,15 @@ import java.io.Writer;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
 import DatabaseDownloader.DatabaseEntry;
 
 public class test {
+	private static HashMap<String,ArrayList<Double>> pathPercentByName = new HashMap<String,ArrayList<Double>>();
+	private static String pathToMasign ="/Users/huebler/Desktop/AssingedNodes.txt";
 	public static void downLoadAssembly(String url, int lengthThreshold) {
 
 		ArrayList<String> output = new  ArrayList<String>();
@@ -96,7 +100,7 @@ public class test {
 		}	
 	
 	public static void main(String[] args) {
-		// TODO Auto-generated method stub
+		/* TODO Auto-generated method stub
 		String path = "/Users/huebler/Desktop/Zunongwangia mangrovi strain=DSM 24499_IMG-taxon 2622736505 annotated assembly_1334022_2.fna.gz";
 		//path= "/Users/huebler/Desktop/ASM187452v1_2125990.fna.gz";		
 		String content;
@@ -130,7 +134,29 @@ public class test {
 		        System.out.println(e);
 		    } catch (IOException e) {
 		        System.out.println(e);
-		    }
+		    }*/
+		process();
 	}
-
+	public static void process() {
+		try (BufferedReader reader = new BufferedReader(new FileReader(pathToMasign))){
+			String line = reader.readLine();
+			while (line != null) {
+				
+				if(line.contains("_")) {
+				System.out.println(line);
+				String[] parts =line.split("\t");
+				String name = parts[0].split("\\_")[(parts[0].split("\\_").length-2)];
+				ArrayList<Double> percentages= new ArrayList<Double>(2);
+				percentages.add(Double.parseDouble( parts[1]));
+				percentages.add(Double.parseDouble( parts[2]));
+				pathPercentByName.put(name, percentages);
+				}
+				 line = reader.readLine();
+				// read next line
+			}
+			reader.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
 }

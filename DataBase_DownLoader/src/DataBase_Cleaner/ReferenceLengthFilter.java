@@ -44,6 +44,8 @@ public class ReferenceLengthFilter {
 		   String header="";
 		   int totalNumber = 0;
 		   int numberKept = 0;
+		   int totalLength =0;
+		   int keptLength=0;
 		   ArrayList<String> contig = new  ArrayList<String>();
 		   while((line = reader.readLine())!=null) {
 			   //System.out.println(line);
@@ -53,7 +55,9 @@ public class ReferenceLengthFilter {
 					   output.add(header);
 					   output.addAll(contig);
 					   numberKept++;
+					   keptLength+=length;
 				   }
+				   totalLength+=length;
 				   length = 0;
 				   contig.clear();
 				   header = line;
@@ -62,16 +66,19 @@ public class ReferenceLengthFilter {
 				   contig.add(line);
 			   }
 		   } 
+		   totalLength+=length;
 		   if(length >=lengthThreshold) {
 			   output.add(header);
 			   output.addAll(contig);
 			   numberKept++;
+			   keptLength+=length;
 		   }
 		   isr.close();
 		   reader.close();
 		   zip.close();
 			   entry.setTotalContigs(totalNumber);
 			   entry.setKeptContigs(numberKept);
+			   entry.setPercentageKeptContig( (keptLength/totalLength));
 		   }catch(Exception e) {
 			e.printStackTrace();
 		    }

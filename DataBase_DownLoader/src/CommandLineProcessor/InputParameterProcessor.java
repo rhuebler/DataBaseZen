@@ -182,6 +182,7 @@ public class InputParameterProcessor {
 		input+="\n--dustLinker	"+dustLinker;
 		input+="\n--index	"+pathToIndex;
 		input+="\n--length	"+lengthTreshold;
+		input+="\n--pathToMaltExAssignment	"+pathToMaltExAssignment;
 		if(ignoreHumanAssemblies)
 			input+="\n--contaminatedremoval";
 		if(keywordRemoval)
@@ -215,7 +216,7 @@ public class InputParameterProcessor {
     	    Option optionLengthThreshold = Option.builder("l").longOpt("length").hasArg().optionalArg(true).desc("Set length threshold for assemblies exclude parts of assemblies that are shorter").build();
     	    Option optionKeywordRemoval = Option.builder("k").longOpt("keywordremoval").optionalArg(true).desc("Key word removal, exclude entries that contain uncultured, co-culture species, synthetic").build();
     	    Option optionIngoreContaminatedAssemblies = Option.builder("c").longOpt("contaminatedremoval").optionalArg(true).desc("Remove human contaminated reference sequences").build();
-    	    Option optionPathToMaltExAssignment = Option.builder().longOpt("pathToMaltExAssignment").optionalArg(true).desc("Specify path to MaltExtract read assignment File").build();
+    	    Option optionPathToMaltExAssignment = Option.builder().longOpt("pathToMaltExAssignment").optionalArg(true).hasArg().desc("Specify path to MaltExtract read assignment File").build();
     	    Options options = new Options();
     	    
     	    // add all parameters to the parser

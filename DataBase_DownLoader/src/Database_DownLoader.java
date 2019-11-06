@@ -34,19 +34,19 @@ public class Database_DownLoader {
 				case DOWNLOAD:{
 					DatabaseProcessor processor = new DatabaseProcessor(inProcessor);
 					processor.process();
-					//processor.loadDatabase();
+					processor.loadDatabase();
 					break;
 					}
 				case CLEAN_ADAPTERS:{
-					
 					DataBaseCleanerProcessor cleaner = new DataBaseCleanerProcessor(inProcessor);
-					//cleaner.contigLengthFiltering();
+					cleaner.contigLengthFiltering();
 					cleaner.removeAdapterContaminatedSequences();
 					break;
 				}
 				case CLEAN_TAXONOMIC:{
 					DataBaseCleanerProcessor cleaner = new DataBaseCleanerProcessor(inProcessor);
 					cleaner.cleanCompromisedSequencesDatabase();
+					break;
 				}
 				case CREATE:{
 					ArtificalDataControler controler = new ArtificalDataControler(inProcessor);

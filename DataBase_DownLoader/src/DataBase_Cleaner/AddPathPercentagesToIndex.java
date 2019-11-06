@@ -23,23 +23,20 @@ public class AddPathPercentagesToIndex {
 		return this.entries;
 	}
 	public void process() {
-		
 		try (BufferedReader reader = new BufferedReader(new FileReader(pathToMasign))){
-			boolean first = true;
 			String line = reader.readLine();
 			while (line != null) {
-				if(!first) {
+				if(line.contains("_")) {
+				System.out.println(line);
 				String[] parts =line.split("\t");
-				String name = parts[0].split("_")[(parts[0].split("_").length-2)];
+				String name = parts[0].split("\\_")[(parts[0].split("\\_").length-2)];
 				ArrayList<Double> percentages= new ArrayList<Double>(2);
 				percentages.add(Double.parseDouble( parts[1]));
 				percentages.add(Double.parseDouble( parts[2]));
 				pathPercentByName.put(name, percentages);
-				}else {
-					first = false;
 				}
+				 line = reader.readLine();
 				// read next line
-				line = reader.readLine();
 			}
 			reader.close();
 		} catch (IOException e) {
@@ -47,6 +44,7 @@ public class AddPathPercentagesToIndex {
 		}
 		for(String key : entrieByName.keySet()) {
 			if(pathPercentByName.containsKey(key)) {
+				System.out.println("here");
 				DatabaseEntry entry = entrieByName.get(key);
 				entry.setOnPathPercentage(pathPercentByName.get(key).get(0));
 				entry.setOffPathPercentage(pathPercentByName.get(key).get(1));

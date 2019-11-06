@@ -164,7 +164,6 @@ public class DataBaseCleanerProcessor {
 		this.entries = addPath.getUpdatedDatabaseEntries();
 	}
 	private void removeCompromisedReferences() {
-		loadDatabaseIndex();
 		ArrayList<DatabaseEntry> entriesToRemove = new ArrayList<DatabaseEntry>();
 		for(DatabaseEntry entry: entries) {
 
@@ -236,7 +235,7 @@ public class DataBaseCleanerProcessor {
 		setAdapterContaminatedSequences();
 		System.out.println("Updating Index with Adapter Information");
 		writer.initializeDatabaseIndex();
-		writer.writeDatabaseAdapterIndex(entries);
+		writer.writeDatabaseIndex(entries);
 		System.out.println("Removing Adapter contained sequences");
 //		removeAdapterContaminatedSequencesFromFolder();
 //		writer.initializeDatabaseIndex();
@@ -251,13 +250,13 @@ public class DataBaseCleanerProcessor {
 		writer.initializeDatabaseIndex();
 		writer.writeDatabaseIndex(entries);
 		System.out.println(entries.size()+" written to Index");
-		System.out.println("Remove contaminated reference Sequences");
+		/*System.out.println("Remove contaminated reference Sequences");
 		removeCompromisedReferences();
 		System.out.println("Dust database");
 		dustDatabase();
 		writer.appendCleanEntriesToDatabaseIndex(entries);
 		System.out.println("DownSample");
-		downsample();
+		downsample();*/
 	}
 	
 }
