@@ -32,7 +32,7 @@ public class EntryLoader {
 	private ArrayList<DatabaseEntry> references = new ArrayList<DatabaseEntry>();
 	private boolean replaceExisting = true;
 	private boolean contigLengthFiltering = true;
-	private int lengthThreshold = 100000;
+	private int lengthThreshold = 5000;
 	private boolean cleanDB = false;
 	private ThreadPoolExecutor executor;
 	private int numThreads=4;
@@ -136,7 +136,7 @@ public class EntryLoader {
 		String fileName = entry.getOutFile();
 		boolean result = false;
 		try{
-			if(!new File(fileName).exists() || replaceExisting) {
+			//if(!new File(fileName).exists() || replaceExisting) {
 				URLConnection conn = new URL(url).openConnection();
 				conn.setConnectTimeout(30*1000);
 				conn.setReadTimeout(90*1000);
@@ -149,7 +149,7 @@ public class EntryLoader {
 		    	}catch(Exception e) {
 		    		failedReferences.add(entry);
 		    	}
-			} 
+			//} 
 		}catch( IOException io) {
 			io.printStackTrace();
 		}
@@ -161,19 +161,19 @@ public class EntryLoader {
 		if(url.contains("material_genomic")) {
 			System.err.println(url);
 		}
-		if( contigLengthFiltering == true) {
-//			switch(entry.getAssembly_level()) {
-//				case COMPLETE:
-//					result = downLoadCompleteReference(entry);
-//					break;
-//				default:
-//					result = downLoadAssembly(entry);
-//				break;	
-			result = downLoadCompleteReference(entry);
-//			}
-		}else {
+//		if( contigLengthFiltering == true) {
+////			switch(entry.getAssembly_level()) {
+////				case COMPLETE:
+////					result = downLoadCompleteReference(entry);
+////					break;
+////				default:
+////					result = downLoadAssembly(entry);
+////				break;	
+//			result = downLoadCompleteReference(entry);
+////			}
+//		}else {
 		   result = downLoadCompleteReference(entry);
-		}
+		//}
 		return result;
 	}
 	
@@ -182,29 +182,31 @@ public class EntryLoader {
 		if(url.contains("material_genomic")) {
 			System.err.println(url);
 		}
-		if( contigLengthFiltering == true) {
-			switch(entry.getAssembly_level()) {
-				case COMPLETE:{
-					ConcurrentDownloader task = new ConcurrentDownloader(entry);
-					Future<DownLoader> future=executor.submit(task);
-					results.add(future);
-					break;
-					}
-				default:{
-					ConcurrentDownloader task = new ConcurrentDownloader(entry,lengthThreshold);
-					Future<DownLoader> future=executor.submit(task);
-					results.add(future);
-				}
-				break;	
-			}
-		}else {
+//		if( contigLengthFiltering == true) {
+//			switch(entry.getAssembly_level()) {
+//				case COMPLETE:{
+//					ConcurrentDownloader task = new ConcurrentDownloader(entry);
+//					Future<DownLoader> future=executor.submit(task);
+//					results.add(future);
+//					break;
+//					}
+//				default:{
+//					ConcurrentDownloader task = new ConcurrentDownloader(entry,lengthThreshold);
+//					Future<DownLoader> future=executor.submit(task);
+//					results.add(future);
+//				}
+//				break;	
+//			}
+//		}else {
 			ConcurrentDownloader task = new ConcurrentDownloader(entry);
 			Future<DownLoader> future=executor.submit(task);
 			results.add(future);
-		}
+//		}
 		
 	}
 	public void getResults() {
+		references.clear();
+		failedReferences.clear();
 		for(Future<DownLoader> future: results) {
 			DownLoader loader;
 			try {
@@ -220,6 +222,7 @@ public class EntryLoader {
 			}
 			
 		}
+		results.clear();
 	}
 	public ArrayList<DatabaseEntry> getDownLoadedReferences(){
 		return references;

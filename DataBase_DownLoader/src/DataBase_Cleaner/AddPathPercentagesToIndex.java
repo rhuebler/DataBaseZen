@@ -27,13 +27,26 @@ public class AddPathPercentagesToIndex {
 			String line = reader.readLine();
 			while (line != null) {
 				if(line.contains("_")) {
-				System.out.println(line);
-				String[] parts =line.split("\t");
-				String name = parts[0].split("\\_")[(parts[0].split("\\_").length-2)];
-				ArrayList<Double> percentages= new ArrayList<Double>(2);
-				percentages.add(Double.parseDouble( parts[1]));
-				percentages.add(Double.parseDouble( parts[2]));
-				pathPercentByName.put(name, percentages);
+					for(String key : entrieByName.keySet()) {
+						if(line.contains(key)) {
+							String[] parts =line.split("\t");
+							ArrayList<Double> percentages= new ArrayList<Double>(2);
+							percentages.add(Double.parseDouble( parts[1]));
+							percentages.add(Double.parseDouble( parts[2]));
+							percentages.add(Double.parseDouble( parts[3]));
+							percentages.add(Double.parseDouble( parts[4]));
+							percentages.add(Double.parseDouble( parts[5]));
+							pathPercentByName.put(key, percentages);
+						}
+					}
+				//System.out.println(line);
+//			
+//				String name = parts[0].split("\\_")[(parts[0].split("\\_").length-2)];
+//				if(name.matches("v[0-9].0")) {//try to get weird asmIDs here
+//					name=parts[0].split("\\_")[(parts[0].split("\\_").length-3)]+"_"+name;
+//					//System.out.println(name);
+//				}
+				
 				}
 				 line = reader.readLine();
 				// read next line
@@ -44,15 +57,21 @@ public class AddPathPercentagesToIndex {
 		}
 		for(String key : entrieByName.keySet()) {
 			if(pathPercentByName.containsKey(key)) {
-				System.out.println("here");
 				DatabaseEntry entry = entrieByName.get(key);
-				entry.setOnPathPercentage(pathPercentByName.get(key).get(0));
-				entry.setOffPathPercentage(pathPercentByName.get(key).get(1));
+				entry.setOnPathPercentageStrict(pathPercentByName.get(key).get(0));
+				entry.setOffPathPercentageStrict(pathPercentByName.get(key).get(1));
+				entry.setOnPathPercentageRelaxed(pathPercentByName.get(key).get(2));
+				entry.setOffPathPercentageRelaxed(pathPercentByName.get(key).get(3));
+				entry.setTotalReadsTaxon(pathPercentByName.get(key).get(4));
 				entrieByName.replace(key, entry);
 			}else {
+				System.out.println(key);
 				DatabaseEntry entry = entrieByName.get(key);
-				entry.setOnPathPercentage(-1);
-				entry.setOffPathPercentage(-1);
+				entry.setOnPathPercentageStrict(-1);
+				entry.setOffPathPercentageStrict(-1);
+				entry.setOnPathPercentageRelaxed(-1);
+				entry.setOffPathPercentageRelaxed(-1);
+				entry.setTotalReadsTaxon(-1.0);
 				entrieByName.replace(key, entry);
 			}
 		}

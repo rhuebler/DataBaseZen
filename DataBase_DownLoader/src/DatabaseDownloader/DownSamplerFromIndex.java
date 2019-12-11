@@ -16,6 +16,24 @@ public class DownSamplerFromIndex {
 	public ArrayList<DatabaseEntry> getEntriesToRemvoe(){
 		return entriesToRemove;
 	}
+//	public void processPriorToDownload(String pathToIndex) {
+//		taxGetter.processNCBIZipFile();;
+//		HashMap<Integer,HashMap<Integer,DatabaseEntry>> entries = loadDatabaseIndex(pathToIndex);
+//		for(Integer key: entries.keySet()) {
+//			if(entries.get(key).size()>=20) {
+//				ArrayList<DatabaseEntry> entriesToDownSample = new ArrayList<DatabaseEntry>();
+//				entriesToDownSample.addAll(entries.get(key).values());
+//				entriesToDownSample.sort(comp);	
+//				entriesToDownSample.subList(0, 20);
+//				//
+//				entriesToRemove.addAll(entriesToDownSample.subList(25, entriesToDownSample.size()-1));	
+//				System.out.println(taxGetter.getNcbiIdToNameMap().get(key)+"\t"+entries.get(key).size());
+//			}
+//			
+////			for(DatabaseEntry e: entries.get(key))
+////    			System.out.println(e.getIndexLine());
+//		}
+//	}
  	public void process(String pathToIndex) {
 		taxGetter.processNCBIZipFile();;
 		HashMap<Integer,HashMap<Integer,DatabaseEntry>> entries = loadDatabaseIndex(pathToIndex);

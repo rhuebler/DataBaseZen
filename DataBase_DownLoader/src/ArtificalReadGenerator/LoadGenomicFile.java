@@ -278,18 +278,16 @@ public class LoadGenomicFile {
 			}
 		}else {
 			System.out.println("Generate pseudo reads without mutations");
-			while(k<numberOfReads) {// relativly fast
-				int randomLength = ThreadLocalRandom.current().nextInt(minimumLength, maximumLength);
-				int position =  ThreadLocalRandom.current().nextInt(0, referenceLength - randomLength);
-				if(format == SimulateFormat.FASTA ) {// allow reads to be generated in fasta and fastq format
+			for(int position=0;position<=reference.length()-100;position+=100)//TODO get remainder
+			{	if(format == SimulateFormat.FASTA ) {// allow reads to be generated in fasta and fastq format
 					simulatedReads.add(">read"+(k+1));
 					//simulatedReads.add(mutateRead(reference.substring(position, position+randomLength)));
-					simulatedReads.add(reference.substring(position, position+randomLength));
+					simulatedReads.add(reference.substring(position, position+100));
 					
 				}else if(format == SimulateFormat.FASTQ) {//not yet implemented
 					simulatedReads.add("@read"+(k+1));
 					//String mutatedSequence = reference.substring(position, position+randomLength);
-					String sequence = reference.substring(position, position+randomLength);
+					String sequence = reference.substring(position, position+99);
 					simulatedReads.add(sequence);
 					simulatedReads.add("+");
 					String quality ="";

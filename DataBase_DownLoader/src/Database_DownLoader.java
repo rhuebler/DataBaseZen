@@ -1,4 +1,5 @@
 import java.io.IOException;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.cli.ParseException;
 
@@ -10,6 +11,7 @@ import DatabaseDownloader.DatabaseProcessor;
 public class Database_DownLoader {
 
 	public static void main(String[] args) {
+		long startTime = System.nanoTime();
 		// https://drive.google.com/drive/folders/1wgMlmPpr3nVPUMUD7K_MYATkQk1AvY2W
 		try {
 			InputParameterProcessor inProcessor = new InputParameterProcessor(args);
@@ -19,8 +21,6 @@ public class Database_DownLoader {
 					DatabaseProcessor processor = new DatabaseProcessor(inProcessor);
 					processor.process();
 					//processor.loadDatabase();
-					DataBaseCleanerProcessor cleaner = new DataBaseCleanerProcessor(inProcessor);
-					cleaner.contigLengthFiltering();
 					break; 
 				}
 				case BOTH:{
@@ -34,12 +34,11 @@ public class Database_DownLoader {
 				case DOWNLOAD:{
 					DatabaseProcessor processor = new DatabaseProcessor(inProcessor);
 					processor.process();
-					processor.loadDatabase();
+					//processor.loadDatabase();
 					break;
 					}
 				case CLEAN_ADAPTERS:{
 					DataBaseCleanerProcessor cleaner = new DataBaseCleanerProcessor(inProcessor);
-					cleaner.contigLengthFiltering();
 					cleaner.removeAdapterContaminatedSequences();
 					break;
 				}
@@ -58,10 +57,15 @@ public class Database_DownLoader {
 					processor.process();
 					processor.updateDatabase();
 					
+//					DataBaseCleanerProcessor cleaner = new DataBaseCleanerProcessor(inProcessor);
+//					cleaner.contigLengthFiltering();
+					break;
+					}	
+				case CLEAN_REFERENCE:{
 					DataBaseCleanerProcessor cleaner = new DataBaseCleanerProcessor(inProcessor);
 					cleaner.contigLengthFiltering();
 					break;
-					}	
+				}
 			}
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
@@ -70,6 +74,8 @@ public class Database_DownLoader {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+		long endTime = System.nanoTime();
+		System.out.println("Runtime: "+ TimeUnit.NANOSECONDS.toMinutes(endTime - startTime) +" Minutes");
 	}
-
+	
 }

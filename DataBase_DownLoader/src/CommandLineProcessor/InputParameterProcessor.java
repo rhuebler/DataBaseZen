@@ -59,7 +59,7 @@ public class InputParameterProcessor {
 	private int dustLevel = 20;
 	private int dustWindow = 64;
 	private int dustLinker = 1 ;
-	private int lengthTreshold = 100000;
+	private int lengthTreshold = 5000;
 	private boolean ignoreHumanAssemblies =false;
 	private String pathToXLSX = "/Users/huebler/Desktop/Breitwieser_2019_GenomeRes_RefSeqHumanContaminationContigs/Supplemental_Table_S2.xlsx";
 	private String pathToMaltExAssignment;
@@ -271,6 +271,9 @@ public class InputParameterProcessor {
     	        	 }else if(Pattern.compile(Pattern.quote("adapter_clean"), Pattern.CASE_INSENSITIVE).matcher(commandLine.getOptionValue("mode")).find()) {
     	        		 mode = ExecutionMode.CLEAN_ADAPTERS;
     	        		 
+    	        	 }else if(Pattern.compile(Pattern.quote("reference_length"), Pattern.CASE_INSENSITIVE).matcher(commandLine.getOptionValue("mode")).find()) {
+    	        		 mode = ExecutionMode.CLEAN_REFERENCE;
+    	        		 
     	        	 }else {
     	        		 System.err.println("Unknown Mode Shutting down");	
     	        		 System.exit(1);
@@ -391,10 +394,7 @@ public class InputParameterProcessor {
     	        				   System.exit(1);
     	        			   }
     	        		   }
-    	        		   if(commandLine.hasOption("length")) {
-    	        			   String length = commandLine.getOptionValue("length");
-    	        			  lengthTreshold = Integer.parseInt(length);
-    	        		   }
+    	        		   
     	        		   if(commandLine.hasOption("contaminatedremoval")) {
     	        			   ignoreHumanAssemblies = true;
     	        		   }
@@ -557,6 +557,19 @@ public class InputParameterProcessor {
 	        					System.err.println("No database index provided!!! Cannot clean Index!!!");
 	        					System.exit(1);
 	        				}  
+    	        		break;
+    	        	}
+    	        	case CLEAN_REFERENCE:{
+    	        		if(commandLine.hasOption("index")) {
+	        			    pathToIndex = commandLine.getOptionValue("index");
+	        				} else {
+	        					System.err.println("No database index provided!!! Cannot clean Index!!!");
+	        					System.exit(1);
+	        				}  
+    	        		if(commandLine.hasOption("length")) {
+ 	        			   String length = commandLine.getOptionValue("length");
+ 	        			  lengthTreshold = Integer.parseInt(length);
+ 	        		   }
     	        		break;
     	        	}
     	        }

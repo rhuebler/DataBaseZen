@@ -29,27 +29,29 @@ public class DownLoader {
 	public DatabaseEntry getEntry() {
 		return entry;
 	}
-		public boolean downLoadCompleteReference(DatabaseEntry entry) {
+		public void downLoadCompleteReference(DatabaseEntry entry) {
+			//System.out.println("I am happily downloading the references");
 			this.entry = entry;
 		String url = entry.getLink();
 		String fileName = entry.getOutFile();
 		try{
-			if(!new File(fileName).exists()) {
+			//if(!new File(fileName).exists()) {
 				URLConnection conn = new URL(url).openConnection();
 				conn.setConnectTimeout(30*1000);
 				conn.setReadTimeout(90*1000);
 				try (InputStream in = conn.getInputStream()) {
 					CopyOption[] options = new CopyOption[] {StandardCopyOption.REPLACE_EXISTING};
 					Files.copy(in, Paths.get(fileName), options);		
-					result = true;
+					this.result = true;
 		    	}catch(Exception e) {
 		    		e.printStackTrace();
 		    	}
-			} 
+			//} 
 		}catch( IOException io) {
+			System.out.println("was unable to download "+entry.getName()+" "+entry.getLink());
 			io.printStackTrace();
 		}
-		return result;
+		//System.out.println("I downloaded the entry with Success? Answer: "+ result);
 	}
 		
 		public void downLoadAssembly(DatabaseEntry entry, int lengthThreshold) {

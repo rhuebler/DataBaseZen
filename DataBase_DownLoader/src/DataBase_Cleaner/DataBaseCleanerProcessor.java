@@ -29,7 +29,7 @@ public class DataBaseCleanerProcessor {
 	private ThreadPoolExecutor executor;
 	private String output;
 	private String pathToMaltExAssignment;
-	private int lengthThreshhold=10000;
+	private int lengthThreshhold=5000;
 	public DataBaseCleanerProcessor(InputParameterProcessor inProcessor){
 		output = inProcessor.getOutDir();
 		pathToIndex = inProcessor.getPathToIndex();
@@ -79,7 +79,8 @@ public class DataBaseCleanerProcessor {
 			Future<AdapterSpotter> future = executor.submit(task);
 			futureList.add(future);
 			progressPercentage(i,entries.size());
-			i++;
+			//System.out.println(i);
+					i++;
 		}
 		executor.shutdown();
 		ArrayList<DatabaseEntry> entriesToUpDate = new ArrayList<DatabaseEntry>();
@@ -126,15 +127,17 @@ public class DataBaseCleanerProcessor {
 	private void loadDatabaseIndex(){
 		ArrayList<DatabaseEntry> indexEntries= new ArrayList<DatabaseEntry>();
 		File indexFile = new File(pathToIndex) ;
+		System.out.println(pathToIndex);
 		BufferedReader br;
 		try {
 			br = new BufferedReader(new FileReader(indexFile));
 			String line; 
 			int number = 0;
 			while ((line = br.readLine()) != null) {
-				//System.out.println(line);
+				
 			    if(number!=0) {
-			    	DatabaseEntry entry = new DatabaseEntry(line);
+			    	//System.out.println(line);
+			    	DatabaseEntry entry = new DatabaseEntry(line.toString());
 			    	indexEntries.add(entry);
 			    }
 			    number++;
@@ -148,6 +151,7 @@ public class DataBaseCleanerProcessor {
 		}
 		
 		 entries=indexEntries;
+		 System.out.println(entries.size()+" Entries read from index");
 	}
 	private void downsample() {
 		loadDatabaseIndex();
@@ -161,16 +165,17 @@ public class DataBaseCleanerProcessor {
 	private void updateReferencesIndexWithPathInformation() {
 		AddPathPercentagesToIndex addPath = new  AddPathPercentagesToIndex(entries, pathToMaltExAssignment);
 		addPath.process();
+		addPath.getUpdatedDatabaseEntries();
 		this.entries = addPath.getUpdatedDatabaseEntries();
 	}
 	private void removeCompromisedReferences() {
 		ArrayList<DatabaseEntry> entriesToRemove = new ArrayList<DatabaseEntry>();
 		for(DatabaseEntry entry: entries) {
 
-			if(entry.getOffPathPercentage()>=contamaninationThreshold) {
+			if(entry.getOffPathPercentageRelaxed()>=contamaninationThreshold) {
 				entriesToRemove.add(entry);
 			}
-			if(entry.getOnPathPercentage()<endogenousThreshold){
+			if(entry.getOnPathPercentageRelaxed()<endogenousThreshold){
 				entriesToRemove.add(entry);
 			}
 		}
@@ -180,10 +185,10 @@ public class DataBaseCleanerProcessor {
 	
 	public void contigLengthFiltering() {
 		loadDatabaseIndex();
-		System.out.println("Recreating database index");
+		System.out.println("Creating backup database index");
 		writer.setOutput(new File(pathToIndex).getParent()+"/");
-		writer.initializeDatabaseIndex();
-		writer.writeDatabaseIndex(entries);
+		writer.initializeDatabaseBackupIndex();
+		writer.writeDatabaseBackupIndex(entries);
 		executor=(ThreadPoolExecutor) Executors.newFixedThreadPool(threads);
 		ArrayList<Future<ReferenceLengthFilter>> futureList = new ArrayList<Future<ReferenceLengthFilter>>();
 		ArrayList<DatabaseEntry> entriesToUpdate = new ArrayList<DatabaseEntry>();
@@ -194,21 +199,28 @@ public class DataBaseCleanerProcessor {
 					ConcurrentReferenceLengthFilter task = new ConcurrentReferenceLengthFilter(entry,lengthThreshhold);
 					Future<ReferenceLengthFilter> future = executor.submit(task);
 					futureList.add(future);
-				}else {
-					entriesToUpdate.add(entry);
+				}else if(entry.getTotalContigs()>0) {//Do not rerun this
+					entriesToUpdate.add(entry);//You would not expect that
+				
 				}
 			}else {
 					entriesToUpdate.add(entry);
 			}
 				
 			progressPercentage(i,entries.size());
+			i++;
 		}
 		executor.shutdown();
 		for(Future<ReferenceLengthFilter> future : futureList) {
 			try {
 				ReferenceLengthFilter filter = future.get();
-				if(filter.getResult()) {
+				if(filter.getResult()&&filter.getEntry().getKeptContigs()>0) {//only if at leat one contig is kept do we keept the entry
 					entriesToUpdate.add(filter.getEntry());
+				}else {
+					File file = new File(filter.getEntry().getOutFile());// if the file exists please delete to avoid problems downstream
+					if(file.exists()) {
+						file.delete();
+					}
 				}
 			} catch (InterruptedException e) {
 				// TODO Auto-generated catch block
@@ -218,18 +230,23 @@ public class DataBaseCleanerProcessor {
 				e.printStackTrace();
 			}
 		}
-		this.entries = entriesToUpdate;
-		System.out.println("Updating Index with Reference Information");
-		writer.initializeDatabaseIndex();
-		writer.writeDatabaseIndex(entries);
+		if(entriesToUpdate.size()<=entries.size()) {// if er get more here than something went wrong
+			writer.setOutput(new File(pathToIndex).getParent()+"/");
+			this.entries = entriesToUpdate;
+			System.out.println("Updating Index with Reference Information");
+			writer.initializeDatabaseIndex();
+			writer.writeDatabaseIndex(entries);
+			System.out.println("Wrote "+entries.size()+ " entries to Index");
+		}
+		
 	}
 	
 	public void removeAdapterContaminatedSequences( ) {
 		loadDatabaseIndex();
-		System.out.println("Recreating database index");
+		System.out.println("Creating backup database index");
 		writer.setOutput(new File(pathToIndex).getParent()+"/");
-		writer.initializeDatabaseIndex();
-		writer.writeDatabaseIndex(entries);
+		writer.initializeDatabaseBackupIndex();
+		writer.writeDatabaseBackupIndex(entries);
 		System.out.println(entries.size()+" written to Index");
 		System.out.println("Finding Sequences containing Adapters");
 		setAdapterContaminatedSequences();
@@ -249,7 +266,7 @@ public class DataBaseCleanerProcessor {
 		writer.setOutput(new File(pathToIndex).getParent()+"/");
 		writer.initializeDatabaseIndex();
 		writer.writeDatabaseIndex(entries);
-		System.out.println(entries.size()+" written to Index");
+		System.out.println(entries.size()+" written to Index "+ writer.geIndex());
 		/*System.out.println("Remove contaminated reference Sequences");
 		removeCompromisedReferences();
 		System.out.println("Dust database");

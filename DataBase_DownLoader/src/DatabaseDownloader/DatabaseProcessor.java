@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import CommandLineProcessor.InputParameterProcessor;
+import Utility.DatabaseEntryComparatorPrior;
 import Utility.IndexWriter;
 import Utility.Phylum;
 import Utility.ReferenceGenome;
@@ -18,6 +19,7 @@ import Utility.State;
  *
  */
 public class DatabaseProcessor {
+	private final Integer priorToScreenValue= 20;
 	private IndexGetter getter;
 	private Phylum phylum;
 	private State sequenceState;
@@ -25,6 +27,7 @@ public class DatabaseProcessor {
 	private ReferenceGenome reference;
 	private String output="";
 	private ArrayList<DatabaseEntry> references;
+	private ArrayList<DatabaseEntry> entries;
 	private boolean cleanDatabase;
 	private boolean keywordFiltering = true;
 	private String pathToIndex="";
@@ -179,15 +182,67 @@ public class DatabaseProcessor {
 		if(contaminatedRemoval) {
 			getter.removeHumanContaminatedAssemblies(humanContaminatedAssemblies);
 		}
-		if (threads>1)
-			loadDatabaseConcurrently();
-		else
-			loadDatabase();
+		entries = getter.getDatabaseEntries();
+		System.out.println("Downloaded NCBI Index");
+	
+		preScreenEntries();
+		for(DatabaseEntry entry : getEntries()) {
+			System.out.println(entry.getName()+"\t"+entry.getContigCountN50()+"\t"+entry.isWantToDownload());
+		}
+//		if (threads>1) {
+//			loadDatabaseConcurrently();
+//		}else {
+//			loadDatabase();
+//			}
 	}
 	public ArrayList<DatabaseEntry> getEntries(){
-		return getter.getDatabaseEntries();
+		return entries;
 	}
-	
+	public void preScreenEntries() {
+		System.out.println("Prescreen Index");
+		DatabaseEntryComparatorPrior prior = new DatabaseEntryComparatorPrior();
+		HashMap<Integer, ArrayList<DatabaseEntry>> entriesByID = new HashMap<Integer, ArrayList<DatabaseEntry>>();
+		HashMap<Integer, Integer> entriesByAmount = new HashMap<Integer, Integer>();
+		for(DatabaseEntry entry : getEntries()) {
+			entry.getAssemblyStatistics();
+			if(entriesByID.containsKey(entry.getTaxID())) {
+				ArrayList<DatabaseEntry>list = entriesByID.get(entry.getTaxID());
+				list.add(entry);
+				entriesByID.replace(entry.getTaxID(), list);
+				entriesByAmount.replace(entry.getTaxID(), (entriesByAmount.get(entry.getTaxID())+1));
+			}else {
+				ArrayList<DatabaseEntry>list = new ArrayList<DatabaseEntry>();
+				list.add(entry);
+				entriesByID.put(entry.getTaxID(), list);
+				entriesByAmount.put(entry.getTaxID(), 1);
+			}
+		}
+		ArrayList<DatabaseEntry> modifiedList = new ArrayList<DatabaseEntry>();
+		for(int key:entriesByAmount.keySet()) {
+			if(entriesByAmount.get(key)>priorToScreenValue) {
+				ArrayList<DatabaseEntry> entriesToDownsample = entriesByID.get(key);
+				entriesToDownsample.sort(prior);
+				int i = 0;
+				System.out.println("For key: "+key);
+				for(DatabaseEntry entry : entriesToDownsample) {
+					System.out.println(entry.getNCBIQualityValue());
+					if(i>=priorToScreenValue) {
+						entry.setWantToDownload(false);
+					}
+					modifiedList.add(entry);
+					i++;
+				}
+				
+			}else {
+				ArrayList<DatabaseEntry> entriesToDownsample = entriesByID.get(key);
+				for(DatabaseEntry entry : entriesToDownsample) {
+					modifiedList.add(entry);
+				}
+			}
+		}
+		entries = modifiedList;
+		System.out.println(entries.size());
+	}
 	public void loadDatabase() {
 		new File(output).mkdirs();
 		EntryLoader loader = new EntryLoader() ;
@@ -200,8 +255,12 @@ public class DatabaseProcessor {
 		int i=0;
 		for(DatabaseEntry entry : getEntries()) {
 			try{
-				boolean result = loader.download(entry);
-				if(result) {
+				if(entry.isWantToDownload()) {
+					boolean result = loader.download(entry);
+					if(result) {
+						writer.appendEntryToDatabaseIndex(entry);
+					}
+				}else {
 					writer.appendEntryToDatabaseIndex(entry);
 				}
 				progressPercentage(i, getEntries().size());
@@ -238,14 +297,17 @@ public class DatabaseProcessor {
 		EntryLoader loader = new EntryLoader() ;
 		loader.setCleanDB(cleanDatabase);
 		loader.setLengthThreshold(length);
-		loader.intiliazeExecutor(8);
+		loader.intiliazeExecutor(threads);
 		writer.setOutput(output);
 		writer.initializeDatabaseIndex();
 		System.out.println("Downloading Entries Concurrently");
 		int i=1;
 		for(DatabaseEntry entry : getEntries()) {
 			try{
-				loader.downloadConcurrently(entry);
+				if(entry.isWantToDownload())
+					loader.downloadConcurrently(entry);
+				else
+					writer.appendEntryToDatabaseIndex(entry);
 //				if(result)
 //					writer.appendEntryToDatabaseIndex(entry);
 				progressPercentage(i, getEntries().size());
@@ -256,7 +318,7 @@ public class DatabaseProcessor {
 		}
 		loader.destroy();
 		loader.getResults();
-		
+		System.out.println("Sucessfull downloaded references were: "+loader.getDownLoadedReferences().size());
 		writer.appendEntriesToDatabaseIndex(loader.getDownLoadedReferences());
 		
 		//if we fail to download something we collect those entries and try again at the end
@@ -294,9 +356,13 @@ public class DatabaseProcessor {
 		int i=0;
 		for(DatabaseEntry entry : entriesToUpdate) {
 			try{
+				if(entry.isWantToDownload()) {
 				boolean result = loader.download(entry);
 				if(result)
 					writer.appendEntryToDatabaseIndex(entry);
+				}else {
+					writer.appendEntryToDatabaseIndex(entry);
+				}
 				progressPercentage(i, getEntries().size());
 				i++;
 			}catch(Exception e) {
@@ -331,7 +397,11 @@ public class DatabaseProcessor {
 			int i=1;
 			for(DatabaseEntry entry : entriesToUpdate) {
 				try{
-					loader.downloadConcurrently(entry);
+					if(entry.isWantToDownload())
+						loader.downloadConcurrently(entry);
+					else {
+						writer.appendEntryToDatabaseIndex(entry);
+					}
 					progressPercentage(i, getEntries().size());
 					i++;
 				}catch(Exception e) {
@@ -344,6 +414,7 @@ public class DatabaseProcessor {
 		
 		//if we fail to download something we collect those entries and try again at the end
 		if(loader.getFailedReferences().size()>0) {
+			System.out.println("Trying to redownload failed References");
 			i=1;
 			loader.intiliazeExecutor(threads);
 			ArrayList<DatabaseEntry> list = loader.getFailedReferences();
@@ -399,7 +470,7 @@ public class DatabaseProcessor {
 		return indexEntries;
 	}
 	
-	public void updateDatabase() {
+	public void updateDatabase() { //TODO have to change this
 		ArrayList<DatabaseEntry> entriesToUpdate = new ArrayList<DatabaseEntry>();
 		ArrayList<DatabaseEntry> currentEntries = new ArrayList<DatabaseEntry>();
 		HashMap<Integer, DatabaseEntry> map = new HashMap<Integer, DatabaseEntry>();

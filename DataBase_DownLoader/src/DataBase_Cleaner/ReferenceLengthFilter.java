@@ -2,6 +2,7 @@ package DataBase_Cleaner;
 
 import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -36,49 +37,58 @@ public class ReferenceLengthFilter {
 		String fileName = entry.getOutFile();
 		ArrayList<String> output = new  ArrayList<String>();
 		try {
-			GZIPInputStream zip = new GZIPInputStream(new FileInputStream(fileName));            
-	        InputStreamReader isr = new InputStreamReader(zip, "UTF8");
-	        BufferedReader reader = new BufferedReader(isr);
-		   String line;
-		   int length=0;
-		   String header="";
-		   int totalNumber = 0;
-		   int numberKept = 0;
-		   int totalLength =0;
-		   int keptLength=0;
-		   ArrayList<String> contig = new  ArrayList<String>();
-		   while((line = reader.readLine())!=null) {
-			   //System.out.println(line);
-			   if(line.startsWith(">")) {
-				   totalNumber++;
-				   if(length >=lengthThreshold) {
-					   output.add(header);
-					   output.addAll(contig);
-					   numberKept++;
-					   keptLength+=length;
+			if(new File(fileName).exists()) {
+				FileInputStream stream = new FileInputStream(fileName);
+				if(stream.available()>0) {
+				GZIPInputStream zip = new GZIPInputStream(stream);            
+		        InputStreamReader isr = new InputStreamReader(zip, "UTF8");
+		        BufferedReader reader = new BufferedReader(isr);
+			   String line;
+			   int length=0;
+			   String header="";
+			   int totalNumber = 0;
+			   int numberKept = 0;
+			   int totalLength =0;
+			   int keptLength=0;
+			   ArrayList<String> contig = new  ArrayList<String>();
+			   while((line = reader.readLine())!=null) {
+				   //System.out.println(line);
+				   if(line.startsWith(">")) {
+					   totalNumber++;
+					   if(length >=lengthThreshold) {
+						   output.add(header);
+						   output.addAll(contig);
+						   numberKept++;
+						   keptLength+=length;
+					   }
+					   totalLength+=length;
+					   length = 0;
+					   contig.clear();
+					   header = line;
+				   }else {
+					   length += line.length();
+					   contig.add(line);
 				   }
-				   totalLength+=length;
-				   length = 0;
-				   contig.clear();
-				   header = line;
-			   }else {
-				   length += line.length();
-				   contig.add(line);
+			   } 
+			   totalLength+=length;
+			   if(length >=lengthThreshold) {
+				   output.add(header);
+				   output.addAll(contig);
+				   numberKept++;
+				   keptLength+=length;
 			   }
-		   } 
-		   totalLength+=length;
-		   if(length >=lengthThreshold) {
-			   output.add(header);
-			   output.addAll(contig);
-			   numberKept++;
-			   keptLength+=length;
-		   }
-		   isr.close();
-		   reader.close();
-		   zip.close();
-			   entry.setTotalContigs(totalNumber);
-			   entry.setKeptContigs(numberKept);
-			   entry.setPercentageKeptContig( (keptLength/totalLength));
+			   isr.close();
+			   reader.close();
+			   zip.close();
+				   entry.setTotalContigs(totalNumber);
+				   entry.setKeptContigs(numberKept);
+				   double fraction = (double)keptLength/(double)totalLength;
+				   //System.out.println(keptLength+"\n"+totalLength +"\n"+fraction);
+				   entry.setPercentageKeptContig(fraction);
+			}
+			}else {
+				System.err.println(entry.getOutFile()+" not available");
+			}
 		   }catch(Exception e) {
 			e.printStackTrace();
 		    }

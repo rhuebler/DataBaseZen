@@ -70,11 +70,11 @@ public class IndexGetter {
 				if(name.contains(taxName)) {
 					//System.out.println(name);
 					entries.add(new DatabaseEntry(parts[0],(parts[7]+" "+parts[8]).toString(),(link+GI+"_genomic.fna.gz"), 
-							outdir, parts[11],Integer.parseInt(parts[5]), Integer.parseInt(parts[6]),parts[14],parts[15],parts[4]));
+							outdir, parts[11],Integer.parseInt(parts[5]), Integer.parseInt(parts[6]),parts[14],parts[15],parts[4],(link+GI+"_assembly_stats.txt")));
 			}
 		}else {
 			entries.add(new DatabaseEntry(parts[0], (parts[7]+" "+parts[8]).toString(),(link+GI+"_genomic.fna.gz"), 
-					outdir, parts[11],Integer.parseInt(parts[5]), Integer.parseInt(parts[6]),parts[14],parts[15],parts[4]));
+					outdir, parts[11],Integer.parseInt(parts[5]), Integer.parseInt(parts[6]),parts[14],parts[15],parts[4],(link+GI+"_assembly_stats.txt")));
 		}
 	}
 	private void processLine(String line) {
