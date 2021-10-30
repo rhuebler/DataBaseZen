@@ -1,3 +1,4 @@
+import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.File;
@@ -8,6 +9,7 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Reader;
 import java.io.Writer;
@@ -15,8 +17,12 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.regex.Pattern;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
+
+import org.apache.commons.net.ftp.FTPClient;
+import org.apache.commons.net.ftp.FTPSClient;
 
 import DatabaseDownloader.DatabaseEntry;
 
@@ -112,33 +118,38 @@ public class test {
 		}	
 	
 	public static void main(String[] args) {
-		getAssemblyStatistics("ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/238/775/GCF_000238775.1_ASM23877v2/GCF_000238775.1_ASM23877v2_assembly_stats.txt");
-		System.out.println(
-				"totalLengthAssembl: "+totalLengthAssembly +"\n"+
-				"spannedGaps: "+spannedGaps+"\n"+
-				"unspannedGaps: "+ unspannedGaps+"\n"+ 
-				"regionCount:"+ regionCount+"\n"+
-				"contigCount: "+ contigCount+"\n"+
-				"contigCountN50: "+ contigCountN50+"\n"+
-				"contigCountL50: " + contigCountL50+"\n"+
-				"totalGapLength "+ totalGapLength+"\n"+
-				"moleculeCount: "+ moleculeCount+"\n"+ 
-				"topLevelCount: "+ topLevelCount+"\n"+
-				"ComponentCount: "+ componentCount);
-		getAssemblyStatistics("ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/005/042/105/GCF_005042105.1_ASM504210v1/GCF_005042105.1_ASM504210v1_assembly_stats.txt");
+
+		String line = " Vibrio_sp._624788_strain_624788_Draft_1234362.fna.gz";
+		System.out.println(line.substring(0,line.length()-3));
 		
-		System.out.println(
-		"totalLengthAssembl: "+totalLengthAssembly +"\n"+
-		"spannedGaps: "+spannedGaps+"\n"+
-		"unspannedGaps: "+ unspannedGaps+"\n"+ 
-		"regionCount:"+ regionCount+"\n"+
-		"contigCount: "+ contigCount+"\n"+
-		"contigCountN50: "+ contigCountN50+"\n"+
-		"contigCountL50: " + contigCountL50+"\n"+
-		"totalGapLength "+ totalGapLength+"\n"+
-		"moleculeCount: "+ moleculeCount+"\n"+ 
-		"topLevelCount: "+ topLevelCount+"\n"+
-		"ComponentCount: "+ componentCount);
+		// downloadFromFTP();
+//		getAssemblyStatistics("ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/238/775/GCF_000238775.1_ASM23877v2/GCF_000238775.1_ASM23877v2_assembly_stats.txt");
+//		System.out.println(
+//				"totalLengthAssembl: "+totalLengthAssembly +"\n"+
+//				"spannedGaps: "+spannedGaps+"\n"+
+//				"unspannedGaps: "+ unspannedGaps+"\n"+ 
+//				"regionCount:"+ regionCount+"\n"+
+//				"contigCount: "+ contigCount+"\n"+
+//				"contigCountN50: "+ contigCountN50+"\n"+
+//				"contigCountL50: " + contigCountL50+"\n"+
+//				"totalGapLength "+ totalGapLength+"\n"+
+//				"moleculeCount: "+ moleculeCount+"\n"+ 
+//				"topLevelCount: "+ topLevelCount+"\n"+
+//				"ComponentCount: "+ componentCount);
+//		getAssemblyStatistics("ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/005/042/105/GCF_005042105.1_ASM504210v1/GCF_005042105.1_ASM504210v1_assembly_stats.txt");
+//		
+//		System.out.println(
+//		"totalLengthAssembl: "+totalLengthAssembly +"\n"+
+//		"spannedGaps: "+spannedGaps+"\n"+
+//		"unspannedGaps: "+ unspannedGaps+"\n"+ 
+//		"regionCount:"+ regionCount+"\n"+
+//		"contigCount: "+ contigCount+"\n"+
+//		"contigCountN50: "+ contigCountN50+"\n"+
+//		"contigCountL50: " + contigCountL50+"\n"+
+//		"totalGapLength "+ totalGapLength+"\n"+
+//		"moleculeCount: "+ moleculeCount+"\n"+ 
+//		"topLevelCount: "+ topLevelCount+"\n"+
+//		"ComponentCount: "+ componentCount);
 		/* TODO Auto-generated method stub
 		String path = "/Users/huebler/Desktop/Zunongwangia mangrovi strain=DSM 24499_IMG-taxon 2622736505 annotated assembly_1334022_2.fna.gz";
 		//path= "/Users/huebler/Desktop/ASM187452v1_2125990.fna.gz";		
@@ -295,5 +306,35 @@ public class test {
 		}
 		
 		return indexEntries;
+	}
+	public static void downloadFromFTP() {
+		FTPClient client = new FTPClient();
+		String line;
+		try {
+			String fileName ="ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/010/525/GCF_000010525.1_ASM1052v1/GCF_000010525.1_ASM1052v1_assembly_stats.txt";
+			URL url = new URL(fileName);
+		            client.connect("ftp.ncbi.nlm.nih.gov");
+		            System.out.println("here");
+		            client.enterRemotePassiveMode();
+		            client.login("anonymous", "");
+		          
+		           try( BufferedReader in = new BufferedReader(new InputStreamReader( client.retrieveFileStream(fileName.replace("ftp://ftp.ncbi.nlm.nih.gov/", ""))))){;
+		            // Download file from FTP server.
+		           
+		            while((line = in.readLine())!= null) {
+		            	System.out.println(line);
+		            }
+		            
+		           }
+		        } catch (IOException e) {
+		            e.printStackTrace();
+		        } finally {
+		            try {
+		                client.disconnect();
+		            } catch (IOException e) {
+		                e.printStackTrace();
+		            }
+		        }
+			
 	}
 }

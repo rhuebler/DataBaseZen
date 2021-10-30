@@ -72,14 +72,15 @@ public class ArtificalDataControler {
 		executor=(ThreadPoolExecutor) Executors.newFixedThreadPool(processor.getNumberOfThreads());//intialize concurrent thread executor 
 		System.out.println("Using "+executor.getCorePoolSize()+" cores");
 		for(DatabaseEntry entry: entries) {
+			if(entry.isWantToDownload()) {
 				ConcurrentLoadGenomicFile task = new ConcurrentLoadGenomicFile(entry, processor.getMaximumRate(), processor.getMaximumLength(), processor.getMinimumLength(), processor.getTransversionRate(), processor.getTransitionRate(),
 						processor.getNumberOfReads(), processor.getOutputFormat(), outDir);
 						executor.submit(task);
-				
+			}
 		}
 		System.out.println("Waiting for read creation");
 		destroy();
-		
+		System.out.println("All Reads generated");
 	}
-	
+
 }

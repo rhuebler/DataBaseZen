@@ -61,6 +61,16 @@ public class Database_DownLoader {
 //					cleaner.contigLengthFiltering();
 					break;
 					}	
+				case COMPLETE:{
+					DatabaseProcessor processor = new DatabaseProcessor(inProcessor);
+					processor.process();
+					DataBaseCleanerProcessor cleaner = new DataBaseCleanerProcessor(inProcessor,processor.getIndex());
+					cleaner.contigLengthFiltering();
+					cleaner.removeAdapterContaminatedSequences();
+					ArtificalDataControler controler = new ArtificalDataControler(inProcessor,processor.getIndex());
+					controler.process();
+					break;
+				}
 				case CLEAN_REFERENCE:{
 					DataBaseCleanerProcessor cleaner = new DataBaseCleanerProcessor(inProcessor);
 					cleaner.contigLengthFiltering();

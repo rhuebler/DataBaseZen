@@ -4,16 +4,18 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.net.URL;
-import java.net.URLConnection;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.time.ZonedDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
-
+import org.apache.commons.net.ftp.FTPClient;
 import Utility.State;
 
 public class DatabaseEntry {
+	private boolean monoCladic = false;
+
 	/**
 	 * This class represents an entry out of NCBI
 	 * 
@@ -60,8 +62,14 @@ public class DatabaseEntry {
 	private boolean wantToDownload = true;
 	private boolean wantToKeep =  true;
 	private String asssemblySummaryLink;
+	private String offPathReferences ="NA;NA\tNA;NA\tNA;NA\tNA;NA\tNA;NA\tNA;NA\tNA;NA\tNA;NA\tNA;NA\tNA;NA\t";
 	
-	
+	public String getAsssemblySummaryLink() {
+		return asssemblySummaryLink;
+	}
+	public void setAsssemblySummaryLink(String asssemblySummaryLink) {
+		this.asssemblySummaryLink = asssemblySummaryLink;
+	}
 	private DecimalFormat df = new DecimalFormat("#.####");
 	
 	
@@ -90,7 +98,7 @@ public class DatabaseEntry {
 		this.assembly_accession =  assembly_accession;
 		this.link = link;
 		this.name = name.toString();
-		this.name = this.name.replace("=", "_").replace("/", "_").replace(" ", "_").replace("'", "_").replace("\"", "_");
+		this.name = this.name.replaceAll("[\\W]", "_");
 		if(!outDir.endsWith("/")){
 			this.outDir= outDir+"/";
 			
@@ -109,17 +117,19 @@ public class DatabaseEntry {
 				state = State.CONTIG;
 			}
 		else {
-			//System.out.println(assemblyLevel);
-			state = State.COMPLETE;
+			System.out.println(assemblyLevel);
+			//state = State.COMPLETE;
 		}
 		setAssembly_level(state);
 		this.setTaxID(taxID);
 		this.setSpeciesTaxID(speciesTaxID);
 		this.setSeq_rel_date(seq_rel_date);
-		this.setAsm_name(asm_name.toString().replace("=", "_").replace("/", "_").replace(" ", "_").replace("'", "_").replace("\"", "_").replace("\\","_"));
+		this.setAsm_name(asm_name.toString().replaceAll("[\\W]", ""));
+		//this.setAsm_name(asm_name.toString().replaceAll("[\\W]", "_");
 		this.outFile = outDir+getName()+"_"+getAsm_name()+"_"+taxID+".fna.gz";
 		this.representative = representative;
 		this.asssemblySummaryLink = asssemblySummaryLink;
+		
 	}
 	public DatabaseEntry(String line) throws IOException {
 		Locale loc= Locale.ENGLISH;
@@ -133,6 +143,7 @@ public class DatabaseEntry {
 //			System.out.println(part+"\t"+i);
 //			i++;
 //		}
+		try{
 				name = parts[0];
 				taxID = Integer.parseInt(parts[1]);
 				speciesTaxID = Integer.parseInt(parts[2]); 
@@ -166,21 +177,48 @@ public class DatabaseEntry {
 		    	setPercentageKeptContig(Double.parseDouble(parts[12]));
 		    	setContainsAdapter(Boolean.parseBoolean(parts[13]));
 		    	setAdapterOccurance(Integer.parseInt(parts[14]));
+		    	//Taxonomic Stuff
 		    	setOnPathPercentageStrict(Double.parseDouble(parts[15]));
 		    	setOffPathPercentageStrict(Double.parseDouble(parts[16]));
 		    	setOnPathPercentageRelaxed(Double.parseDouble(parts[17]));
 		    	setOffPathPercentageRelaxed(Double.parseDouble(parts[18]));
-		    	setTotalReadsTaxon(Double.parseDouble(parts[19]));
-			
+		    	setTotalReadsTaxon((int) Double.parseDouble(parts[19]));
+		    	//NCBI stuff
+		    	setTotalLengthAssembly(Integer.parseInt(parts[20]));
+		    	setSpannedGaps(Integer.parseInt(parts[21]));
+		    	setUnspannedGaps(Integer.parseInt(parts[22]));
+		    	setRegionCount(Integer.parseInt(parts[23]));
+		    	setContigCount(Integer.parseInt(parts[24]));
+		    	setContigCountN50(Integer.parseInt(parts[25]));
+		    	setContigCountL50(Integer.parseInt(parts[26]));
+		    	setTotalGapLength(Integer.parseInt(parts[27]));
+		    	setMoleculeCount(Integer.parseInt(parts[28]));
+		    	setTopLevelCount(Integer.parseInt(parts[29]));
+		    	setComponentCount(Integer.parseInt(parts[30]));
+		    	setWantToDownload(Boolean.parseBoolean(parts[31]));
+		    	setWantToKeep(Boolean.parseBoolean(parts[32]));
+		    	ArrayList<String> references = 	new ArrayList<String>();
+		    	if(parts.length>33) {
+			    	for(int i = 33;i<43;i++) {
+			    		 references.add(parts[i]);
+			    	}
+		    	}
+		    	setOffPathReferences(references);
+		    	}catch(ArrayIndexOutOfBoundsException outOfBound) {
+		    		System.err.println(line);
+		    		outOfBound.printStackTrace();
+		    	}
+//		    	if(!wantToDownload&&wantToKeep)
+//		    		System.out.println(name+"\t"+state + "\t"+ wantToDownload+"\t"+ wantToKeep);
 		}
-	public int getNCBIQualityValue() {
+	public int getNCBIQualityValue() {//TODO rethink this
 		int value = 0;
 		switch(assembly_level) {
 			default:
-				value = getContigCountL50();
+				value =500+ getContigCountL50();
 				break;
 			case COMPLETE :{
-				value = 1 ;
+				value = 10000 ;
 				break;
 			}	
 		}
@@ -191,13 +229,23 @@ public class DatabaseEntry {
 	public void getAssemblyStatistics() {
 
 		String line;
-		try {
-			URLConnection conn = new URL(asssemblySummaryLink).openConnection();
-			 conn.setConnectTimeout(90*1000);
-			 conn.setReadTimeout(90*1000);
-		   try (BufferedReader reader =new BufferedReader(new InputStreamReader(conn.getInputStream()))) {
+			
+//			URLConnection conn = new URL(asssemblySummaryLink).openConnection();
+//			conn.setUseCaches(true);
+//			 conn.setConnectTimeout(90*1000);
+//			 conn.setReadTimeout(90*1000);
+//		//System.out.println(assembly_level);
+//		   try (BufferedReader reader =new BufferedReader(new InputStreamReader(conn.getInputStream()))) {
+			FTPClient client = new FTPClient();
+			System.out.println("here");
+			try {
+				String fileName = asssemblySummaryLink.toString().replace("ftp://ftp.ncbi.nlm.nih.gov/", "");
+			     client.connect("ftp.ncbi.nlm.nih.gov");
+			    client.enterRemotePassiveMode();
+			    client.login("anonymous", "");
+			
+			try( BufferedReader reader = new BufferedReader(new InputStreamReader(client.retrieveFileStream(fileName)))){
 			   while((line = reader.readLine())!= null) {
-				 
 			if (line.contains("all")) {
 
 				if (line.contains("total-length")) {
@@ -223,11 +271,12 @@ public class DatabaseEntry {
 					contigCount=Integer.parseInt(parts[parts.length-1]);
 				}
 				if (line.contains("contig-N50")) {
-					 
+					
 					String parts[] = line.toString().split("\\t");
 					contigCountN50=Integer.parseInt(parts[parts.length-1]);
 				}
 				if (line.contains("contig-L50")) {
+					
 					String parts[] = line.toString().split("\\t");
 					contigCountL50=Integer.parseInt(parts[parts.length-1]);
 				}
@@ -258,6 +307,12 @@ public class DatabaseEntry {
 			System.err.println(asssemblySummaryLink + " cannot be read");
 			io.printStackTrace();
 			
+		}finally {
+            try {
+                client.disconnect();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
 		}
 		   
 	}
@@ -343,34 +398,34 @@ public class DatabaseEntry {
 		this.taxID = taxID;
 	}
 	public String getIndexLine() {
-			if(time!=null)
+			if(time!=null) {
+				//System.out.println("I have the time of my Download and I owe it all to DSL");
 				return name +"\t"+taxID+"\t"+speciesTaxID+"\t"+assembly_level+"\t"+seq_rel_date+"\t"+asm_name+"\t"+getOutFile()+"\t"+time
 						+"\t"+representative+"\t"+totalContigs+"\t"+keptContigs
-						+"\t"+(totalContigs-keptContigs)+"\t"+df.format(percentageKeptContig)+
-						"\t"+containsAdapter+ "\t"+ adapterOccurance +"\t"+ df.format(onPathPercentageStrict)+"\t"+ 
-						df.format(offPathPercentageStrict)+"\t"+ df.format(onPathPercentageRelaxed)+"\t"
-						+ df.format(offPathPercentageRelaxed)+"\t"+totalReadsTaxon;
-			else	
+						+"\t"+(totalContigs-keptContigs)+"\t"+df.format(percentageKeptContig)
+						+"\t"+containsAdapter+ "\t"+ adapterOccurance +"\t"+ df.format(onPathPercentageStrict)
+						+"\t"+df.format(offPathPercentageStrict)+"\t"+ df.format(onPathPercentageRelaxed)
+						+"\t"+df.format(offPathPercentageRelaxed)+"\t"+totalReadsTaxon
+						+"\t"+totalLengthAssembly+"\t"+ spannedGaps+"\t"+ unspannedGaps
+						+"\t"+regionCount+"\t"+contigCount+"\t"+ contigCountN50+"\t"+contigCountL50+"\t"+ totalGapLength 
+						+"\t"+ moleculeCount+"\t"+ topLevelCount+"\t"+ componentCount+"\t"+ wantToDownload+"\t"+ wantToKeep
+						+"\t"+offPathReferences+monoCladic;
+			}else	{
 				return name +"\t"+taxID+"\t"+speciesTaxID+"\t"+assembly_level+"\t"+seq_rel_date
 						+"\t"+asm_name+"\t"+getOutFile()+"\t"+ZonedDateTime.now()
 						+"\t"+representative+"\t"+totalContigs+"\t"+keptContigs
 						+"\t"+(totalContigs-keptContigs)+"\t"+df.format(percentageKeptContig)+
 						"\t"+containsAdapter+ "\t"+ adapterOccurance +"\t"+ df.format(onPathPercentageStrict)
 						+"\t"+ df.format(offPathPercentageStrict)+"\t"+ df.format(onPathPercentageRelaxed)+"\t"
-						+ df.format(offPathPercentageRelaxed)+"\t"+totalReadsTaxon;
+						+ df.format(offPathPercentageRelaxed)+"\t"+totalReadsTaxon
+						+"\t"+totalLengthAssembly+"\t"+ spannedGaps+"\t"+ unspannedGaps+"\t"+regionCount+"\t"
+						+contigCount+"\t"+ contigCountN50+"\t"+contigCountL50+"\t"+ totalGapLength 
+						+"\t"+ moleculeCount+"\t"+ topLevelCount+"\t"+ componentCount+"\t"+ wantToDownload+"\t"+ wantToKeep
+						+"\t"+offPathReferences+monoCladic;
+				
+			}
 	}
-//	public String getAdapterContainedIndexLine() {
-//		if(time!=null)
-//			return name +"\t"+taxID+"\t"+speciesTaxID+"\t"+assembly_level+"\t"+seq_rel_date+"\t"+asm_name+"\t"+getOutFile()+"\t"+time+"\t"+representative+"\t"+totalContigs+"\t"+keptContigs+"\t"+(totalContigs-keptContigs)+"\t"+containsAdapter+"\t"+ adapterOccurance;
-//		else	
-//			return name +"\t"+taxID+"\t"+speciesTaxID+"\t"+assembly_level+"\t"+seq_rel_date+"\t"+asm_name+"\t"+getOutFile()+"\t"+ZonedDateTime.now()+"\t"+representative+"\t"+totalContigs+"\t"+keptContigs+"\t"+(totalContigs-keptContigs)+"\t"+containsAdapter+"\t"+ adapterOccurance;
-//	}
-//	public String getPathContaminedIndexLine() {
-//		if(time!=null)
-//			return name +"\t"+taxID+"\t"+speciesTaxID+"\t"+assembly_level+"\t"+seq_rel_date+"\t"+asm_name+"\t"+getOutFile()+"\t"+time+"\t"+representative+"\t"+totalContigs+"\t"+keptContigs+"\t"+(totalContigs-keptContigs)+ "\t"+containsAdapter+ "\t"+ adapterOccurance +"\t"+ onPathPercentage+"\t"+ offPathPercentage;
-//		else	
-//			return name +"\t"+taxID+"\t"+speciesTaxID+"\t"+assembly_level+"\t"+seq_rel_date+"\t"+asm_name+"\t"+getOutFile()+"\t"+ZonedDateTime.now()+"\t"+representative+"\t"+totalContigs+"\t"+keptContigs+"\t"+(totalContigs-keptContigs)+"\t"+containsAdapter+ "\t"+ adapterOccurance +"\t"+ onPathPercentage+"\t"+ offPathPercentage;
-//	}
+
 	public String getCleanedIndexLine() {
 		if(time!=null)
 			return name +"\t"+taxID+"\t"+speciesTaxID+"\t"+assembly_level+"\t"+seq_rel_date+"\t"+asm_name+"\t"+getFilteredFile()+"\t"+time+"\t"+representative+"\t"+totalContigs+"\t"+keptContigs+"\t"+(totalContigs-keptContigs);
@@ -407,8 +462,8 @@ public class DatabaseEntry {
 	public int getTotalReadsTaxon() {
 		return (int) totalReadsTaxon;
 	}
-	public void setTotalReadsTaxon(Double double1) {
-		this.totalReadsTaxon = double1;
+	public void setTotalReadsTaxon(int i) {
+		this.totalReadsTaxon = i;
 	}
 	public double getOffPathPercentageRelaxed() {
 		return offPathPercentageRelaxed;
@@ -511,5 +566,26 @@ public class DatabaseEntry {
 	}
 	public void setWantToKeep(boolean wantToKeep) {
 		this.wantToKeep = wantToKeep;
+	}
+	public void setOffPathReferences(List<String> list) {
+		String line="";
+		for(String part:list) {
+			line+=part+"\t";
+		}
+		offPathReferences = line;
+	}
+	public String getoffPathReferences() {
+		return this.offPathReferences;
+	}
+	public void setMonoCladic(boolean parseBoolean) {
+		monoCladic = parseBoolean;
+		
+	}
+	public boolean isMonoCladic() {
+		return this.monoCladic;
+	}
+	public void setOutFile(String string) {
+		this.outFile = string;
+		
 	}
 }

@@ -1,10 +1,14 @@
 package ArtificalReadGenerator;
 
+import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
+import java.io.Writer;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -13,6 +17,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.zip.GZIPInputStream;
+import java.util.zip.GZIPOutputStream;
 
 import DatabaseDownloader.DatabaseEntry;
 import Utility.SimulateFormat;
@@ -277,13 +282,19 @@ public class LoadGenomicFile {
 				k++;
 			}
 		}else {
+			
+			
 			System.out.println("Generate pseudo reads without mutations");
 			for(int position=0;position<=reference.length()-100;position+=100)//TODO get remainder
 			{	if(format == SimulateFormat.FASTA ) {// allow reads to be generated in fasta and fastq format
 					simulatedReads.add(">read"+(k+1));
 					//simulatedReads.add(mutateRead(reference.substring(position, position+randomLength)));
 					simulatedReads.add(reference.substring(position, position+100));
-					
+					//String[]parts =reference.split("(?<=\\G.{100})");//split string into 100bo chunkus by weird regex magic https://stackoverflow.com/questions/2297347/splitting-a-string-at-every-n-th-character
+//					for(String s :parts) {
+//						simulatedReads.add(">read"+(k+1));
+//						simulatedReads.add(s);
+//					}
 				}else if(format == SimulateFormat.FASTQ) {//not yet implemented
 					simulatedReads.add("@read"+(k+1));
 					//String mutatedSequence = reference.substring(position, position+randomLength);
@@ -295,6 +306,16 @@ public class LoadGenomicFile {
 						quality +="~";
 					simulatedReads.add(quality);
 				}
+		//			//simulatedReads.add(mutateRead(reference.substring(position, position+randomLength)));	
+		//			for(String s :parts) {
+		//			simulatedReads.add("@read"+(k+1));
+		//			simulatedReads.add(s);
+		//			simulatedReads.add("+");
+//					String quality ="";
+//					for(int i =0;i<s.length();i++)
+//						quality +="~";
+//					simulatedReads.add(quality);
+		//		}
 				k++;
 			}
 		}
@@ -317,6 +338,19 @@ public class LoadGenomicFile {
 			System.out.println(outDir+getReferenceName()+".simulated."+f);
 			//System.out.println(file.getFileName()+" "+simulatedReads.size());
 			Files.write(file, simulatedReads, Charset.forName("UTF-8"));
+	
+			try (   FileOutputStream outputStream = new FileOutputStream(outDir+getReferenceName()+".simulated."+f, false);
+					 BufferedOutputStream buffered =  new BufferedOutputStream(outputStream);
+		             Writer writer = new OutputStreamWriter((buffered), "UTF-8")) {
+				 	for(String line : simulatedReads) {
+				 		writer.write(line);
+				 		writer.write("\n");
+				 
+				 	}
+	     }catch(IOException io) {
+	     	System.err.println("Failed to wrtie reads for "+getReferenceName());
+				io.printStackTrace();
+			}
 		}catch(IOException io){
 			io.printStackTrace();
 		}

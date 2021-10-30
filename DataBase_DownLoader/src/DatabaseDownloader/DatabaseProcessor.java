@@ -5,8 +5,12 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.HashMap;
+
+import org.apache.commons.net.ftp.FTPClient;
+
 import CommandLineProcessor.InputParameterProcessor;
 import Utility.DatabaseEntryComparatorPrior;
 import Utility.IndexWriter;
@@ -19,7 +23,8 @@ import Utility.State;
  *
  */
 public class DatabaseProcessor {
-	private final Integer priorToScreenValue= 20;
+
+	
 	private IndexGetter getter;
 	private Phylum phylum;
 	private State sequenceState;
@@ -36,8 +41,8 @@ public class DatabaseProcessor {
 	private IndexWriter writer = new IndexWriter();
 	private boolean contaminatedRemoval = false;
 	private ArrayList<String> humanContaminatedAssemblies =  new  ArrayList<String>();
-	
-	
+	private InputParameterProcessor inPro;
+
 	public void progressPercentage(int remain, int total) {//Adapted from  https://stackoverflow.com/questions/852665/command-line-progress-bar-in-java
 	    if (remain > total) {
 	        throw new IllegalArgumentException();
@@ -53,7 +58,7 @@ public class DatabaseProcessor {
 	        bareDone.append(icon);
 	    }
 	    String bareRemain = bare.substring(remainProcent, bare.length());
-	    System.out.print("\r" + bareDone + bareRemain + " " + remainProcent * 10 + "%");
+	    System.out.print("\\r" + bareDone + bareRemain + " " + remainProcent * 10 + "%");
 	    if (remain == total) {
 	        System.out.print("\n");
 	    }
@@ -98,10 +103,16 @@ public class DatabaseProcessor {
 		keywordFiltering = inProcessor.isKeywordRemoval();
 		contaminatedRemoval = inProcessor.isRemoveHumanContaminated();
 		if(contaminatedRemoval) {
-			ReadContaminationXLSX readContamination = new ReadContaminationXLSX(inProcessor.getPathToXLSXFiles());
-			readContamination.process();
-			humanContaminatedAssemblies = readContamination.getAssemblyIDs();
+			if(inProcessor.getAssembliesToIgnore().size()==0) {
+				ReadContaminationXLSX readContamination = new ReadContaminationXLSX(inProcessor.getPathToXLSXFiles());
+				readContamination.process();
+				humanContaminatedAssemblies = readContamination.getAssemblyIDs();
+			}else {
+				humanContaminatedAssemblies =inProcessor.getAssembliesToIgnore();
+			}
 		}
+		//Prior screen value
+		inPro = inProcessor;
 	}
 	
 	public void process() {
@@ -184,65 +195,48 @@ public class DatabaseProcessor {
 		}
 		entries = getter.getDatabaseEntries();
 		System.out.println("Downloaded NCBI Index");
-	
-		preScreenEntries();
-		for(DatabaseEntry entry : getEntries()) {
-			System.out.println(entry.getName()+"\t"+entry.getContigCountN50()+"\t"+entry.isWantToDownload());
+		
+		PreScreenerFTP ftpScreener = new PreScreenerFTP(inPro);
+		ftpScreener.preScreenEntriesFTP(getEntries());
+		if(ftpScreener.getFailedEntries().size()>0) {
+			System.out.println("Downloading failed entries");
+			ftpScreener.preScreenEntriesFTP(ftpScreener.getFailedEntries());
 		}
-//		if (threads>1) {
-//			loadDatabaseConcurrently();
-//		}else {
-//			loadDatabase();
-//			}
+	
+		this.entries=ftpScreener.getModifiedList();
+		System.out.println(ftpScreener.getRemoved()+" entries will be removed");
+//		if(ftpScreener.getRemoved()==0) {
+//			for(int key:ftpScreener.entriesByAmount.keySet())
+//				System.out.println(key+"	"+ftpScreener.entriesByAmount.get(key));
+//			
+//			System.exit(1);
+//		}
+		//System.out.println("Original size: "+originalSize+" down sampled Size: "+ getEntries().size());
+		if (threads>1) {
+			if(threads>4) {
+				System.out.println("Maximum number of Threads for downloading set to 4 as higher number results in frequent Server Exceptions");
+				threads=4;
+			}
+			loadDatabaseConcurrently();
+		}else {
+			loadDatabase();
+			}
 	}
 	public ArrayList<DatabaseEntry> getEntries(){
 		return entries;
 	}
-	public void preScreenEntries() {
-		System.out.println("Prescreen Index");
-		DatabaseEntryComparatorPrior prior = new DatabaseEntryComparatorPrior();
-		HashMap<Integer, ArrayList<DatabaseEntry>> entriesByID = new HashMap<Integer, ArrayList<DatabaseEntry>>();
-		HashMap<Integer, Integer> entriesByAmount = new HashMap<Integer, Integer>();
-		for(DatabaseEntry entry : getEntries()) {
-			entry.getAssemblyStatistics();
-			if(entriesByID.containsKey(entry.getTaxID())) {
-				ArrayList<DatabaseEntry>list = entriesByID.get(entry.getTaxID());
-				list.add(entry);
-				entriesByID.replace(entry.getTaxID(), list);
-				entriesByAmount.replace(entry.getTaxID(), (entriesByAmount.get(entry.getTaxID())+1));
-			}else {
-				ArrayList<DatabaseEntry>list = new ArrayList<DatabaseEntry>();
-				list.add(entry);
-				entriesByID.put(entry.getTaxID(), list);
-				entriesByAmount.put(entry.getTaxID(), 1);
-			}
-		}
-		ArrayList<DatabaseEntry> modifiedList = new ArrayList<DatabaseEntry>();
-		for(int key:entriesByAmount.keySet()) {
-			if(entriesByAmount.get(key)>priorToScreenValue) {
-				ArrayList<DatabaseEntry> entriesToDownsample = entriesByID.get(key);
-				entriesToDownsample.sort(prior);
-				int i = 0;
-				System.out.println("For key: "+key);
-				for(DatabaseEntry entry : entriesToDownsample) {
-					System.out.println(entry.getNCBIQualityValue());
-					if(i>=priorToScreenValue) {
-						entry.setWantToDownload(false);
-					}
-					modifiedList.add(entry);
-					i++;
-				}
-				
-			}else {
-				ArrayList<DatabaseEntry> entriesToDownsample = entriesByID.get(key);
-				for(DatabaseEntry entry : entriesToDownsample) {
-					modifiedList.add(entry);
-				}
-			}
-		}
-		entries = modifiedList;
-		System.out.println(entries.size());
-	}
+
+		
+	
+	
+
+	
+	
+	
+	
+	
+	
+	
 	public void loadDatabase() {
 		new File(output).mkdirs();
 		EntryLoader loader = new EntryLoader() ;
@@ -302,24 +296,25 @@ public class DatabaseProcessor {
 		writer.initializeDatabaseIndex();
 		System.out.println("Downloading Entries Concurrently");
 		int i=1;
+		int k =0;
 		for(DatabaseEntry entry : getEntries()) {
 			try{
-				if(entry.isWantToDownload())
+				if(entry.isWantToDownload()) {
 					loader.downloadConcurrently(entry);
-				else
+				}else {
+					k++;
 					writer.appendEntryToDatabaseIndex(entry);
-//				if(result)
-//					writer.appendEntryToDatabaseIndex(entry);
-				progressPercentage(i, getEntries().size());
+				}
+				//progressPercentage(i, getEntries().size());
 				i++;
 			}catch(Exception e) {
 				e.printStackTrace();
 			}
 		}
+		System.out.println("Appended "+k+" entries");
 		loader.destroy();
 		loader.getResults();
-		System.out.println("Sucessfull downloaded references were: "+loader.getDownLoadedReferences().size());
-		writer.appendEntriesToDatabaseIndex(loader.getDownLoadedReferences());
+		
 		
 		//if we fail to download something we collect those entries and try again at the end
 		if(loader.getFailedReferences().size()>0) {
@@ -339,12 +334,14 @@ public class DatabaseProcessor {
 			}
 			loader.destroy();
 			loader.getResults();
-			writer.appendEntriesToDatabaseIndex(loader.getDownLoadedReferences());
+			//writer.appendEntriesToDatabaseIndex(loader.getDownLoadedReferences());
 		}
 		// if we still fail to download them we write an extra index containing them
 		if(loader.getFailedReferences().size()>0) {
 			writer.writeFailedEntires(loader.getFailedReferences());
 		}
+		System.out.println("Sucessfull downloaded references were: "+loader.getDownLoadedReferences().size());
+		writer.appendEntriesToDatabaseIndex(loader.getDownLoadedReferences());
 		references = loader.getDownLoadedReferences();	
 	}
 	
@@ -410,7 +407,7 @@ public class DatabaseProcessor {
 			}
 			loader.destroy();
 			loader.getResults();
-			writer.appendEntriesToDatabaseIndex(loader.getDownLoadedReferences());
+			//writer.appendEntriesToDatabaseIndex(loader.getDownLoadedReferences());
 		
 		//if we fail to download something we collect those entries and try again at the end
 		if(loader.getFailedReferences().size()>0) {
@@ -498,6 +495,8 @@ public class DatabaseProcessor {
 		System.out.println(currentEntries.size()+" written to Index");
 		if(!entriesToUpdate.isEmpty()) {
 			System.out.println("Updating database loading "+entriesToUpdate.size()+" entries");
+			PreScreenerFTP ftpScreener = new PreScreenerFTP(inPro);
+			ftpScreener.preScreenEntriesFTP(entriesToUpdate);//TODO what to do?
 			if(threads>1) {
 				loadDatabaseConcurrently(entriesToUpdate);
 			}else {

@@ -56,6 +56,7 @@ public class EntryLoader {
 	}
 	public void clearFailedReferences() {
 		failedReferences.clear();
+		//references.clear();
 	}
 	public boolean downLoadAssembly(DatabaseEntry entry) {
 		String url = entry.getLink();
@@ -98,11 +99,12 @@ public class EntryLoader {
 				   output.addAll(contig);
 				   numberKept++;
 			   }
+			   in.close();
 			   buffered.close();
 			   decoder.close();
 			   gzipStream.close();
-				   entry.setTotalContigs(totalNumber);
-				   entry.setKeptContigs(numberKept);
+			   entry.setTotalContigs(totalNumber);
+			   entry.setKeptContigs(numberKept);
 			
 				  
 			   }catch(Exception e) {
@@ -205,7 +207,6 @@ public class EntryLoader {
 		
 	}
 	public void getResults() {
-		references.clear();
 		failedReferences.clear();
 		for(Future<DownLoader> future: results) {
 			DownLoader loader;

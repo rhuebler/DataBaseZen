@@ -19,12 +19,13 @@ import java.util.zip.GZIPOutputStream;
 import DatabaseDownloader.DatabaseEntry;
 
 public class AdapterSpotter {
-	//Check if A referencne contains an exact match to an Adaoter... might be insuffcient but a good start
+	//Check if A referencne contains an exact match to an Adaoter... might be insuffcient but a good start masks Adapters and counts Ns
 	 private ArrayList<String> adapters = new  ArrayList<String>();
 	 private boolean containsAdapter = false;
 	 private DatabaseEntry entry; 
 	 private int occurance = 0;
-	
+	 private int nCount = 0;
+	 private boolean mask= true;
 	 public AdapterSpotter() {
 		 ArrayList<String> adapters = new  ArrayList<String>();
 			adapters.add("AGATCGGAAGAG");
@@ -34,6 +35,19 @@ public class AdapterSpotter {
 			adapters.add("ACGCCTTGGCCGT");
 			this.adapters=adapters;
 	 }
+	 public AdapterSpotter(boolean mask) {
+		 ArrayList<String> adapters = new  ArrayList<String>();
+			adapters.add("AGATCGGAAGAG");
+			adapters.add("ATGGAATTCTCGG");
+			adapters.add("AGATCGTCGGACT");
+			adapters.add("ACTGTCTCTTATA");
+			adapters.add("ACGCCTTGGCCGT");
+			this.adapters=adapters;
+			this.mask = mask;
+	 }
+	public int getNCount() {
+		return this.nCount;
+	}
 	public int getOccurance() {
 		return this.occurance;
 	}
@@ -73,9 +87,14 @@ public class AdapterSpotter {
 		   }catch(Exception e) {
 			e.printStackTrace();
 		    }
+		 //CHECK NS
+		
 		 
 		 for(String key : contigByHeader.keySet()) {
 			 String sequence = contigByHeader.get(key);
+			 if(sequence.contains("N")) {
+				 nCount+=sequence.split("N").length-1;
+			 }
 			 for(String adapter:adapters) {
 				 if(sequence.contains(adapter)) {
 					String [] parts = sequence.split(adapter);
@@ -89,7 +108,10 @@ public class AdapterSpotter {
 						if(i<parts.length) {
 							int k =1;
 							while(k<adapter.length()) {
-								seqAd+="N";
+								if(mask) {
+									seqAd+="N";
+									 nCount++;
+								}
 								k++;
 							}
 						}

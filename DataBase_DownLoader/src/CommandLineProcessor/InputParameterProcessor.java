@@ -61,9 +61,26 @@ public class InputParameterProcessor {
 	private int dustLinker = 1 ;
 	private int lengthTreshold = 5000;
 	private boolean ignoreHumanAssemblies =false;
-	private String pathToXLSX = "/Users/huebler/Desktop/Breitwieser_2019_GenomeRes_RefSeqHumanContaminationContigs/Supplemental_Table_S2.xlsx";
+	private String assembliesToIgnoreFile="";
+	private ArrayList<String> assembliesToIgnore;
+	private String pathToXLSX="";
 	private String pathToMaltExAssignment;
-	//cite [1] Morgulis A, Gertz EM, Schaffer AA, Agarwala R. A Fast and Symmetric DUST Implementation to Mask Low-Complexity DNA Sequences. for dustMasker part
+	private int cutOffTotalGapLength = 0;
+	private Integer priorToScreenValue= 25;
+	private int cutOffL50 = 10;
+	private int cutOffN50 = 25000;
+	private int cutOffScore =100;
+	
+	private int cutOffTotalLengthAssembly= 0; 
+	private int cutOffSpannedGaps= 0; 
+	private int cutOffRegionCount= 0; 
+	private int cutOffContigCount= 0; 
+	private int cutOffUnspannedGaps= 0; 
+
+	private int cutOffMoleculeCount= 0;  
+	private int cutOffTopLevelCount= 0;  
+	private int cutOffComponentCount= 0;
+	private double cutOffOnPathPercentage = 0.0;
 	// constructor
 	public String getPathToMaltExAssignment() {
 		return this.pathToMaltExAssignment;
@@ -142,12 +159,13 @@ public class InputParameterProcessor {
 		try {
 			 Scanner	in = new Scanner(f.getCanonicalFile());
 			 while(in.hasNext()){
-				 String line = in.nextLine().trim();	
-				 taxNames.add(line);
+				 String line = in.nextLine().trim();
+				 if(!line.startsWith("#"))
+					 taxNames.add(line);
 			 }
 			 in.close();
 		 	}catch (FileNotFoundException e) {
-		 System.err.println("File Not Found");
+		 System.err.println("TaxaListFile Not Found");
 		 e.printStackTrace();
 		}		
 	}
@@ -184,9 +202,15 @@ public class InputParameterProcessor {
 		input+="\n--length	"+lengthTreshold;
 		input+="\n--pathToMaltExAssignment	"+pathToMaltExAssignment;
 		if(ignoreHumanAssemblies)
-			input+="\n--contaminatedremoval";
+			input+="\n--contaminatedRemoval "+assembliesToIgnoreFile+" ";
 		if(keywordRemoval)
 			input+="\n--keywordRemoval";
+		input+="\n--priorToScreenValue	"+priorToScreenValue;
+		input+="\n--cutOffTotalGapLength	"+ cutOffTotalGapLength;
+		input+="\n--cutOffL50	"+ cutOffL50;
+		input+="\n--cutOffN50	"+ cutOffN50;
+		input+="\n--cutOffScore	"+cutOffScore;
+		//cite [1] Morgulis A, Gertz EM, S
 		return input;
 	}
 	private void process(String[] parameters) throws IOException, ParseException{	
@@ -214,9 +238,16 @@ public class InputParameterProcessor {
     	    Option optionDustLinker = Option.builder("").longOpt("dustLinker").hasArg().optionalArg(true).desc("Set Linker Parameter for DustMasker").build();
     	    Option optionPathToIndex = Option.builder("i").longOpt("index").hasArg().optionalArg(true).desc("Set the path to index to update an index").build();
     	    Option optionLengthThreshold = Option.builder("l").longOpt("length").hasArg().optionalArg(true).desc("Set length threshold for assemblies exclude parts of assemblies that are shorter").build();
-    	    Option optionKeywordRemoval = Option.builder("k").longOpt("keywordremoval").optionalArg(true).desc("Key word removal, exclude entries that contain uncultured, co-culture species, synthetic").build();
-    	    Option optionIngoreContaminatedAssemblies = Option.builder("c").longOpt("contaminatedremoval").optionalArg(true).desc("Remove human contaminated reference sequences").build();
+    	    Option optionKeywordRemoval = Option.builder("k").longOpt("keywordRemoval").optionalArg(true).desc("Key word removal, exclude entries that contain uncultured, co-culture species, synthetic").build();
+    	    Option optionIngoreContaminatedAssemblies = Option.builder("c").longOpt("contaminatedRemoval").optionalArg(true).hasArg().desc("Ignore Assembly IDs provided in List with contaminated sequences").build();
     	    Option optionPathToMaltExAssignment = Option.builder().longOpt("pathToMaltExAssignment").optionalArg(true).hasArg().desc("Specify path to MaltExtract read assignment File").build();
+    	    Option optionCutOffGapLength = Option.builder().longOpt("cutOffTotalGapLength").optionalArg(true).hasArg().desc("Cutoff value for total gap length").build();
+    	    Option optionNumberOfReadsPrior = Option.builder().longOpt("priorToScreenValue").optionalArg(true).hasArg().desc("How many references should be kept at max after pree screening").build();
+    	    Option optionCutOffL50 = Option.builder().longOpt("cutOffL50").optionalArg(true).hasArg().desc("Cutoff value for contig L50 value").build();
+    	    Option optionCutOffN50 = Option.builder().longOpt("cutOffN50").optionalArg(true).hasArg().desc("Cutoff value for contig N50 value").build();
+    	    Option optionCutOffScore = Option.builder().longOpt("cutOffScore").optionalArg(true).hasArg().desc("Cutoff value for prior Score").build();
+    	    Option optionCutOffOnPath = Option.builder().longOpt("cutOffOnPathPercentage").optionalArg(true).hasArg().desc("Cutoff value for on Path percentage").build();
+    	    
     	    Options options = new Options();
     	    
     	    // add all parameters to the parser
@@ -245,6 +276,12 @@ public class InputParameterProcessor {
     	    options.addOption(optionKeywordRemoval);
     	    options.addOption(optionIngoreContaminatedAssemblies);
     	    options.addOption(optionPathToMaltExAssignment);
+    	    options.addOption(optionCutOffScore);
+    	    options.addOption(optionCutOffN50);
+    	    options.addOption(optionCutOffL50);
+    	    options.addOption(optionNumberOfReadsPrior);
+    	    options.addOption(optionCutOffGapLength);
+    	    options.addOption(optionCutOffOnPath);
     	    //parse arguments into the comandline parser
     	        commandLine = parser.parse(options, parameters);
  
@@ -349,7 +386,7 @@ public class InputParameterProcessor {
 	        		
     	        switch (mode) {
     	        	case BOTH:{
-    	        		if (commandLine.hasOption("keywordremoval")) {
+    	        		if (commandLine.hasOption("keywordRemoval")) {
     	        			this.keywordRemoval=true;
     	        		}
     	        		   if (commandLine.hasOption("phylum")) {
@@ -395,14 +432,29 @@ public class InputParameterProcessor {
     	        			   }
     	        		   }
     	        		   
-    	        		   if(commandLine.hasOption("contaminatedremoval")) {
+    	        		   if(commandLine.hasOption("contaminatedRemoval")) {
     	        			   ignoreHumanAssemblies = true;
+    	        			   File file=new File(commandLine.getOptionValue("contaminatedRemoval"));
+    	        			   if(file.exists() && file.canRead()) {
+    	        				   assembliesToIgnoreFile = file.getCanonicalPath();
+    	        				  try { Scanner	in = new Scanner(file.getCanonicalFile());
+    	        					 while(in.hasNext()){
+    	        						 String line = in.nextLine().trim();
+    	        						 if(!line.startsWith("#"))
+    	        							 assembliesToIgnore.add(line);
+    	        					 }
+    	        					 in.close();
+    	        				 	}catch (FileNotFoundException e) {
+		    	        				 System.err.println("contaminatedRemoval File Not Found");
+		    	        				 e.printStackTrace();
+		    	        				}		   
+    	        			   	} 
     	        		   }
     	        			   
     	        		break;
     	        		}
     	        	case DOWNLOAD:{
-    	        		if (commandLine.hasOption("keywordremoval")) {
+    	        		if (commandLine.hasOption("keywordRemoval")) {
     	        			this.keywordRemoval=true;
     	        		}
     	        		
@@ -450,9 +502,40 @@ public class InputParameterProcessor {
 							System.exit(1);
 	        			   }
 	        		   }   
-	        		  if(commandLine.hasOption("contaminatedremoval")) {
+	        		   if(commandLine.hasOption("contaminatedRemoval")) {
 	        			   ignoreHumanAssemblies = true;
+	        			   File file=new File(commandLine.getOptionValue("contaminatedRemoval"));
+	        			   if(file.exists() && file.canRead()) {
+	        				   assembliesToIgnoreFile = file.getCanonicalPath();
+	        				  try { Scanner	in = new Scanner(file.getCanonicalFile());
+	        					 while(in.hasNext()){
+	        						 String line = in.nextLine().trim();
+	        						 if(!line.startsWith("#"))
+	        							 assembliesToIgnore.add(line);
+	        					 }
+	        					 in.close();
+	        				 	}catch (FileNotFoundException e) {
+	    	        				 System.err.println("contaminatedRemoval File Not Found");
+	    	        				 e.printStackTrace();
+	    	        				}		   
+	        			   	} 
+	        		   }
+	        		  if (commandLine.hasOption("cutOffTotalGapLength")) {
+	        			  cutOffTotalGapLength=Integer.parseInt(commandLine.getOptionValue("cutOffTotalGapLength"));
 	        		  }
+	        		  if (commandLine.hasOption("cutOffL50")) {
+	        			  cutOffL50=Integer.parseInt(commandLine.getOptionValue("cutOffL50"));
+	        		  }
+	        		  if (commandLine.hasOption("cutOffN50")) {
+	        			  cutOffN50=Integer.parseInt( commandLine.getOptionValue("cutOffN50"));
+	        		  }
+	        		  if (commandLine.hasOption("cutOffScore")) {
+	        			  cutOffScore=Integer.parseInt(commandLine.getOptionValue("cutOffScore"));
+	        		  }
+	        		  if (commandLine.hasOption("priorToScreenValue")) {
+	        			  priorToScreenValue=Integer.parseInt(commandLine.getOptionValue("priorToScreenValue"));
+	        		  }
+	        		  
 	        		break;
 	        		}
     	        	case CREATE:{
@@ -478,7 +561,7 @@ public class InputParameterProcessor {
 	    	        	break;
     	        	}
     	        	case UPDATE:{
-    	        		if (commandLine.hasOption("keywordremoval")) {
+    	        		if (commandLine.hasOption("keywordRemoval")) {
     	        			this.keywordRemoval=true;
     	        		}
 	    	        		if (commandLine.hasOption("phylum")) {
@@ -557,6 +640,9 @@ public class InputParameterProcessor {
 	        					System.err.println("No database index provided!!! Cannot clean Index!!!");
 	        					System.exit(1);
 	        				}  
+    	        		if(commandLine.hasOption("cutOffOnPathPercentage")) {
+    	        			cutOffOnPathPercentage = Double.parseDouble(commandLine.getOptionValue("cutOffOnPathPercentage"));
+    	        		}
     	        		break;
     	        	}
     	        	case CLEAN_REFERENCE:{
@@ -572,6 +658,116 @@ public class InputParameterProcessor {
  	        		   }
     	        		break;
     	        	}
+				case COMPLETE:
+					if (commandLine.hasOption("keywordRemoval")) {
+	        			this.keywordRemoval=true;
+	        		}
+	        		
+	        		if (commandLine.hasOption("phylum")) {
+	        				if(Pattern.compile(Pattern.quote("bacteria"), Pattern.CASE_INSENSITIVE).matcher(commandLine.getOptionValue("phylum")).find()){
+	        					phylum = Phylum.BACTERIA;
+	      	        	 		}else if(Pattern.compile(Pattern.quote("eukaryotes"), Pattern.CASE_INSENSITIVE).matcher(commandLine.getOptionValue("phylum")).find()) {
+ 	      	        		   phylum = Phylum.EUKARYOTES;
+ 	      	        	 	}else if(Pattern.compile(Pattern.quote("fullnt"), Pattern.CASE_INSENSITIVE).matcher(commandLine.getOptionValue("phylum")).find()) {
+ 	      	        	 		phylum = Phylum.FULLNT;
+ 	      	        	 	}else if(Pattern.compile(Pattern.quote("viral"), Pattern.CASE_INSENSITIVE).matcher(commandLine.getOptionValue("phylum")).find()) {
+ 	      	        	 		phylum = Phylum.VIRAL;
+ 	      	        	 	}else {
+ 	      	        	 		System.err.println("unspecified input for phylum");
+ 	      	        	 	}
+	        			}
+        			   if(commandLine.hasOption("state")) {
+	        			   String state = commandLine.getOptionValue("state");
+	        			   if(Pattern.compile(Pattern.quote("complete"), Pattern.CASE_INSENSITIVE).matcher(state).find()){
+	        				   sequenceState = State.COMPLETE;
+	        			   }else if(Pattern.compile(Pattern.quote("scaffold"), Pattern.CASE_INSENSITIVE).matcher(state).find()){
+	        				   sequenceState = State.SCAFFOLD;
+	        			   }else if(Pattern.compile(Pattern.quote("contig"), Pattern.CASE_INSENSITIVE).matcher(state).find()){
+	        				   sequenceState =  State.CONTIG;
+	        			   }else if(Pattern.compile(Pattern.quote("all"), Pattern.CASE_INSENSITIVE).matcher(state).find()){
+	        				   sequenceState = State.ALL;
+	        			   }else {
+	        				   
+	        			   }
+        			   }
+        		   if (commandLine.hasOption("taxonlist")) {
+        			   try{
+        				   String tax = commandLine.getOptionValue("taxonlist");
+        				   File f = new File(tax);
+        				   System.out.println(f.getCanonicalPath());
+        				   if(f.getCanonicalFile().exists()){
+    	     					readTaxList(f);
+        				   }else {
+        					System.err.println("IOException taxa list cannot be resolved");
+   							System.exit(1);
+        				   }
+        			   }catch (IOException e) {
+						System.err.println("IOException taxa list cannot be resolved");
+						e.printStackTrace();
+						System.exit(1);
+        			   }
+        		   }   
+        		   if(commandLine.hasOption("contaminatedRemoval")) {
+        			   ignoreHumanAssemblies = true;
+        			   File file=new File(commandLine.getOptionValue("contaminatedRemoval"));
+        			   if(file.exists() && file.canRead()) {
+        				   assembliesToIgnoreFile = file.getCanonicalPath();
+        				  try { Scanner	in = new Scanner(file.getCanonicalFile());
+        					 while(in.hasNext()){
+        						 String line = in.nextLine().trim();
+        						 if(!line.startsWith("#"))
+        							 assembliesToIgnore.add(line);
+        					 }
+        					 in.close();
+        				 	}catch (FileNotFoundException e) {
+    	        				 System.err.println("contaminatedRemoval File Not Found");
+    	        				 e.printStackTrace();
+    	        				}		   
+        			   	} 
+        		   }
+        		  if (commandLine.hasOption("cutOffTotalGapLength")) {
+        			  cutOffTotalGapLength=Integer.parseInt(commandLine.getOptionValue("cutOffTotalGapLength"));
+        		  }
+        		  if (commandLine.hasOption("cutOffL50")) {
+        			  cutOffL50=Integer.parseInt(commandLine.getOptionValue("cutOffL50"));
+        		  }
+        		  if (commandLine.hasOption("cutOffN50")) {
+        			  cutOffN50=Integer.parseInt( commandLine.getOptionValue("cutOffN50"));
+        		  }
+        		  if (commandLine.hasOption("cutOffScore")) {
+        			  cutOffScore=Integer.parseInt(commandLine.getOptionValue("cutOffScore"));
+        		  }
+        		  if (commandLine.hasOption("priorToScreenValue")) {
+        			  priorToScreenValue=Integer.parseInt(commandLine.getOptionValue("priorToScreenValue"));
+        		  }
+					   if (commandLine.hasOption("taxonlist")) {
+	        			   try{
+	        				   String tax = commandLine.getOptionValue("taxonlist");
+	        				   File f = new File(tax);
+	        				   if(f.getCanonicalFile().exists()){
+	    	     					readTaxList(f);
+	        				   }
+	        			   }catch (IOException e) {
+							System.err.println("IOException taxa list cannot be resolved");
+							e.printStackTrace();
+							System.exit(1);
+	        			   }
+	        		   }   
+					if(commandLine.hasOption("pathToMaltExAssignment")) {
+	        			pathToMaltExAssignment = commandLine.getOptionValue("pathToMaltExAssignment");
+        				} else {
+        					System.err.println("No MaltExtractAssignment file provided!!! Cannot clean DB!!!");
+        					System.exit(1);
+        				}  
+	        		if(commandLine.hasOption("cutOffOnPathPercentage")) {
+	        			cutOffOnPathPercentage = Double.parseDouble(commandLine.getOptionValue("cutOffOnPathPercentage"));
+	        		}
+					if(commandLine.hasOption("length")) {
+	        			   String length = commandLine.getOptionValue("length");
+	        			  lengthTreshold = Integer.parseInt(length);
+	        		   }
+ 	        		
+					break;
     	        }
     	  
     	        if(!commandLine.hasOption("o")){
@@ -594,6 +790,96 @@ public class InputParameterProcessor {
 	}
 	public void setKeywordRemoval(boolean keywordRemoval) {
 		this.keywordRemoval = keywordRemoval;
+	}
+	public int getCutOffTotalGapLength() {
+		return cutOffTotalGapLength;
+	}
+	public void setCutOffTotalGapLength(int cutOffTotalGapLength) {
+		this.cutOffTotalGapLength = cutOffTotalGapLength;
+	}
+	public Integer getPriorToScreenValue() {
+		return priorToScreenValue;
+	}
+	public void setPriorToScreenValue(Integer priorToScreenValue) {
+		this.priorToScreenValue = priorToScreenValue;
+	}
+	public int getCutOffL50() {
+		return cutOffL50;
+	}
+	public void setCutOffL50(int cutOffL50) {
+		this.cutOffL50 = cutOffL50;
+	}
+	public int getCutOffN50() {
+		return cutOffN50;
+	}
+	public void setCutOffN50(int cutOffN50) {
+		this.cutOffN50 = cutOffN50;
+	}
+	public int getCutOffScore() {
+		return cutOffScore;
+	}
+	public void setCutOffScore(int cutOffScore) {
+		this.cutOffScore = cutOffScore;
+	}
+	public int getCutOffTotalLengthAssembly() {
+		return cutOffTotalLengthAssembly;
+	}
+	public void setCutOffTotalLengthAssembly(int cutOffTotalLengthAssembly) {
+		this.cutOffTotalLengthAssembly = cutOffTotalLengthAssembly;
+	}
+	public int getCutOffSpannedGaps() {
+		return cutOffSpannedGaps;
+	}
+	public void setCutOffSpannedGaps(int cutOffSpannedGaps) {
+		this.cutOffSpannedGaps = cutOffSpannedGaps;
+	}
+	public int getCutOffRegionCount() {
+		return cutOffRegionCount;
+	}
+	public void setCutOffRegionCount(int cutOffRegionCount) {
+		this.cutOffRegionCount = cutOffRegionCount;
+	}
+	public int getCutOffContigCount() {
+		return cutOffContigCount;
+	}
+	public void setCutOffContigCount(int cutOffContigCount) {
+		this.cutOffContigCount = cutOffContigCount;
+	}
+	public int getCutOffUnspannedGaps() {
+		return cutOffUnspannedGaps;
+	}
+	public void setCutOffUnspannedGaps(int cutOffUnspannedGaps) {
+		this.cutOffUnspannedGaps = cutOffUnspannedGaps;
+	}
+	public int getCutOffMoleculeCount() {
+		return cutOffMoleculeCount;
+	}
+	public void setCutOffMoleculeCount(int cutOffMoleculeCount) {
+		this.cutOffMoleculeCount = cutOffMoleculeCount;
+	}
+	public int getCutOffTopLevelCount() {
+		return cutOffTopLevelCount;
+	}
+	public void setCutOffTopLevelCount(int cutOffTopLevelCount) {
+		this.cutOffTopLevelCount = cutOffTopLevelCount;
+	}
+	public int getCutOffComponentCount() {
+		return cutOffComponentCount;
+	}
+	public void setCutOffComponentCount(int cutOffComponentCount) {
+		this.cutOffComponentCount = cutOffComponentCount;
+	}
+	public ArrayList<String> getAssembliesToIgnore() {
+		return assembliesToIgnore;
+	}
+	public void setAssembliesToIgnore(ArrayList<String> assembliesToIgnore) {
+		this.assembliesToIgnore = assembliesToIgnore;
+	}
+	public double getCutOffOnPathPercentage() {
+		return cutOffOnPathPercentage;
+	}
+	public void setCutOffOnPathPercentage(double cutOffOnPathPercentage) {
+		this.cutOffOnPathPercentage = cutOffOnPathPercentage;
 	}
     }
   

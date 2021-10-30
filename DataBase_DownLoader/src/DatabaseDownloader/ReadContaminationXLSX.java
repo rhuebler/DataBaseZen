@@ -43,7 +43,7 @@ public class ReadContaminationXLSX {
 			}
 		}else {
 			System.err.println("No XSLX File present try to download");
-			String url = "https://raw.githubusercontent.com/rhuebler/DatabaseDownloader/master/AssemblyNames.txt";
+			String url = "https://raw.githubusercontent.com/rhuebler/DatabaseDownloader/master/AssemblyNames.txt?token=ALG76J3SKTVWHRFJU3ZVUAS6NSKVC";
 			try{
 				URLConnection conn = new URL(url).openConnection();
 				conn.setConnectTimeout(30*1000);

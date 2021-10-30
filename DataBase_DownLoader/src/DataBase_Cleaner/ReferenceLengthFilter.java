@@ -87,7 +87,9 @@ public class ReferenceLengthFilter {
 				   entry.setPercentageKeptContig(fraction);
 			}
 			}else {
-				System.err.println(entry.getOutFile()+" not available");
+				System.err.println(entry.getOutFile()+" not available\nNote in index as missing");
+				entry.setWantToDownload(false);
+				entry.setWantToKeep(false);
 			}
 		   }catch(Exception e) {
 			e.printStackTrace();

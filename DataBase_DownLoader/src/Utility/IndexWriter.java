@@ -15,8 +15,12 @@ import DatabaseDownloader.DatabaseEntry;
 public class IndexWriter {
 	private String header = "Name\ttaxID\tspeciesTaxID\tassembly_level\tseq_rel_date\tasm_name\tFileName\tDownLoadDate\treference\tNumberTotalContigs"
 			+ "\tNumberKeptContigs\tNumberRemovedContigs\tPercentageKept\tAdapter\tAdapterOccurance"
-			+ "\tOnPathStrict\tOffPathStrict\tOnPathRelaxed\tOffPathRelaxed\tTotalReads";
-			
+			+ "\tOnPathStrict\tOffPathStrict\tOnPathRelaxed\tOffPathRelaxed\tTotalReads"
+			+"\ttotalLengthAssembly\tspannedGaps\tunspannedGaps\t"
+			+ "regionCount\tcontigCount\tcontigCountN50\tcontigCountL50\ttotalGapLength" 
+			+"\tmoleculeCount\ttopLevelCount\tcomponentCount\twantToDownload\twantToKeep\t"
+			+"off_reference_01\toff_reference_02\toff_reference_03\toff_reference_04\toff_reference_05\t"
+			+ "off_reference_06\toff_reference_07\toff_reference_08\toff_reference_09\toff_reference_10\tmonoCladic";
 	private ArrayList<DatabaseEntry> references;
 	public ArrayList<DatabaseEntry> getReferences() {
 		return references;
@@ -105,18 +109,35 @@ public class IndexWriter {
 		}
 	}
 	public void writeDatabaseIndex(ArrayList<DatabaseEntry> entriesToIndex) {
+		ArrayList<Integer> numbers = new ArrayList<Integer>();
+		int i =1;
 		if(!entriesToIndex.isEmpty()) {
 			 try ( BufferedWriter br  = new BufferedWriter( new FileWriter(new File(output+"index.txt"),false)))
 			 {
 				br.write(header);
 				br.newLine();
+				
 				 for(DatabaseEntry entry : entriesToIndex) {
+//					String[] headerP = header.split("\t");
+//					String[] lineP = entry.getIndexLine().split("\t");
+//					int i=0;
+//					while(i<headerP.length)
+//						System.out.println(headerP[i]+"\t"+ lineP[i] );
+					 	if(entry.getIndexLine().split("\t").length != header.split("\t").length)
+					 			numbers.add(i);
 						br.write(entry.getIndexLine());
 						br.newLine();
+						i++;
 				 }
 		        }catch(IOException io) {
 					io.printStackTrace();
 				}
+			}
+			if(numbers.size()>0) {
+				String line = "Index corrptet at row(s):";
+				for(int number : numbers)
+					line+= "\n" +number;
+				System.err.println(line);	
 			}
 		}
 	public void writeDatabaseBackupIndex(ArrayList<DatabaseEntry> entriesToIndex) {

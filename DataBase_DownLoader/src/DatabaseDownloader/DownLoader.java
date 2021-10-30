@@ -43,6 +43,7 @@ public class DownLoader {
 					CopyOption[] options = new CopyOption[] {StandardCopyOption.REPLACE_EXISTING};
 					Files.copy(in, Paths.get(fileName), options);		
 					this.result = true;
+					in.close();
 		    	}catch(Exception e) {
 		    		e.printStackTrace();
 		    	}
@@ -94,13 +95,15 @@ public class DownLoader {
 					   output.addAll(contig);
 					   numberKept++;
 				   }
+				   in.close();
+				   gzipStream .close();
 				   buffered.close();
 				   decoder.close();
 				   gzipStream.close();
 					   entry.setTotalContigs(totalNumber);
 					   entry.setKeptContigs(numberKept);
 				
-					  
+					   
 				   }catch(Exception e) {
 					e.printStackTrace();
 				    }
